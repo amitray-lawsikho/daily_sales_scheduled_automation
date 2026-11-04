@@ -1,12 +1,43 @@
 {
   "_comment": "One entry per month (YYYY-MM). The user supplies the new month's 'Sales Team Reports' Google Sheet link on the 1st. A run for a month with no entry here STOPS and asks for the link. Add entries with: python3 mtd/run_mtd.py set-sheet <YYYY-MM> <sheet-url-or-id>",
-  "default_segments": ["Team Uzair"],
-  "notify_email": ["amitray@lawsikho.in"],
+  "default_segments": [
+    "Team Uzair"
+  ],
+  "notify_email": [
+    "amitray@lawsikho.in"
+  ],
   "sheets": {
     "2026-11": {
       "id": "1ovSlQT0iNIoe-uBYJzY4eLExCZfzVh4CAev3G609JqM",
       "title": "November 2026- Sales Team Reports",
       "url": "https://docs.google.com/spreadsheets/d/1ovSlQT0iNIoe-uBYJzY4eLExCZfzVh4CAev3G609JqM/edit?gid=233362967#gid=233362967"
     }
+  },
+  "working_days": {
+    "2026-11": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      10,
+      11,
+      12,
+      13,
+      14,
+      16,
+      17,
+      18,
+      19,
+      20,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30
+    ]
   }
 }

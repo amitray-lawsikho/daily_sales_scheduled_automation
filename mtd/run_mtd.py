@@ -74,6 +74,27 @@ def cmd_plan(args):
                    f"Ask the user for the {out['month_name']} sheet link; do not produce deliverables until it is provided.")
     else:
         out.update(status='READY', sheet_id=sh['id'], sheet_title=sh.get('title', ''))
+    # working-day calendar (supplied by the user each month)
+    td = today_ist(args.today); wdays = cfg.get('working_days', {}).get(f'{td.year}-{td.month:02d}')
+    out['today'] = str(td)
+    out['today_is_working_day'] = None if wdays is None else td.day in wdays
+    out['last_working_day_of_month'] = bool(wdays) and td.day == max(wdays)
+    if out['last_working_day_of_month']:
+        nxt = (td.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
+        out['reminder'] = (f"Last working day of {td:%B}: please share the {nxt:%B %Y}- Sales Team Reports sheet link "
+                           f"and the {nxt:%B} working schedule on 1 {nxt:%b} so the {nxt:%B} runs can be scheduled.")
+    # previous-month close: history must hold the previous month to its last day
+    pY, pM = (Y, M - 1) if M > 1 else (Y - 1, 12)
+    pD = calendar.monthrange(pY, pM)[1]
+    pk = f'{pY}-{pM:02d}'
+    import csv
+    last = max((r['date'] for r in csv.DictReader(open(HIST)) if r['date'].startswith(pk)), default=None)
+    if last != f'{pk}-{pD:02d}':
+        psh = sheet_for(cfg, pY, pM)
+        out['prev_month_close'] = dict(month_key=pk, history_ends=last, sheet_id=psh['id'] if psh else None,
+                                       note=('Close the previous month first: fetch its sheet and run '
+                                             f'`run --month {pk} --history-only`.') if psh else
+                                       f'History for {pk} ends {last} but no sheet is registered for {pk} — ask the user.')
     print(json.dumps(out, indent=2))
     return 0 if sh else 3
 
@@ -111,6 +132,26 @@ def cmd_set_sheet(args):
     print(f'registered {Y}-{M:02d} -> {sid}')
 
 
+def cmd_set_workdays(args):
+    cfg = load_cfg(); Y, M = map(int, args.month.split('-')); D = calendar.monthrange(Y, M)[1]
+    days = set()
+    for part in args.days.replace(' ', '').split(','):
+        a, _, b = part.partition('-'); days |= set(range(int(a), int(b or a) + 1))
+    if not days or min(days) < 1 or max(days) > D:
+        sys.exit(f'days out of range for {Y}-{M:02d} (1-{D})')
+    days = sorted(days)
+    cfg.setdefault('working_days', {})[f'{Y}-{M:02d}'] = days
+    cfg['working_days'] = dict(sorted(cfg['working_days'].items()))
+    json.dump(cfg, open(CFG, 'w'), indent=2); open(CFG, 'a').write('\n')
+    # compact ranges for the cron day-of-month field
+    rng, st = [], days[0]
+    for x, y in zip(days, days[1:] + [None]):
+        if y != x + 1:
+            rng.append(f'{st}-{x}' if st != x else f'{x}'); st = y
+    print(json.dumps(dict(month=f'{Y}-{M:02d}', working_days=days,
+                          cron=f'CRON_TZ=Asia/Kolkata 0 12 {",".join(rng)} {M} *')))
+
+
 def last_date_in_workbook(path, Y, M):
     import pandas as pd
     x = pd.ExcelFile(path)
@@ -124,8 +165,8 @@ def rs(v):
     return f"Rs {v:,.0f}"
 
 
-def run_scripts(env, wd):
-    for s in ('pipeline.py', 'analysis.py', 'build_pdf.py'):
+def run_scripts(env, wd, scripts=('pipeline.py', 'analysis.py', 'build_pdf.py')):
+    for s in scripts:
         r = subprocess.run([sys.executable, os.path.join(MTD, s)], cwd=wd, env=env, capture_output=True, text=True)
         open(os.path.join(wd, s.replace('.py', '.log')), 'w').write(r.stdout + '\n' + r.stderr)
         if r.returncode:
@@ -236,6 +277,16 @@ def cmd_run(args):
     gen = (today_ist(args.today)).strftime('%d %b %Y')
     env = dict(os.environ, MTD_N=str(N), MTD_Y=str(Y), MTD_M=str(M), MTD_SEGMENTS=','.join(segs),
                MTD_OUT=os.path.join(wd, 'out'), MTD_GEN_DATE=gen, MPLBACKEND='Agg')
+    if args.history_only:
+        # month close: rebuild that month in history only (no PDF), report the restatement
+        run_scripts(env, wd, ('pipeline.py',))
+        d = pickle.load(open(os.path.join(wd, 'data.pkl'), 'rb')); rest = d['rest']
+        shutil.copy(os.path.join(wd, 'revenue_history.csv'), HIST)
+        print(json.dumps(dict(status='OK', mode='history-only', month_key=key, N=N,
+                              revenue=round(float(d['anom']['rev']), 2), enrollments=int(d['anom']['enr']),
+                              restated_revenue=round(float(rest['new_rev'] - rest['held_rev']), 2),
+                              restated_enrollments=int(rest['new_enr'] - rest['held_enr'])), indent=2))
+        return 0
     run_scripts(env, wd)
 
     # ---- load results for checks + brief
@@ -318,10 +369,14 @@ def main():
         if name == 'run':
             p.add_argument('--workbook', required=True); p.add_argument('--segments')
             p.add_argument('--allow-stale', action='store_true'); p.add_argument('--force-no-sheet', action='store_true')
+            p.add_argument('--history-only', action='store_true', help='month close: update history only, no PDF')
+    p = sp.add_parser('set-workdays', help='store the month working schedule and print the schedule cron')
+    p.add_argument('month'); p.add_argument('days', help='e.g. "2-6,10-14,16-20,23-30"')
     p = sp.add_parser('decode'); p.add_argument('export'); p.add_argument('out'); p.add_argument('--month')
     p = sp.add_parser('set-sheet'); p.add_argument('month'); p.add_argument('sheet'); p.add_argument('--title')
     a = ap.parse_args()
-    sys.exit({'plan': cmd_plan, 'run': cmd_run, 'decode': cmd_decode, 'set-sheet': cmd_set_sheet}[a.cmd](a) or 0)
+    sys.exit({'plan': cmd_plan, 'run': cmd_run, 'decode': cmd_decode, 'set-sheet': cmd_set_sheet,
+              'set-workdays': cmd_set_workdays}[a.cmd](a) or 0)
 
 
 if __name__ == '__main__':

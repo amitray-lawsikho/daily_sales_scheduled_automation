@@ -10,6 +10,7 @@ project "MTD Revenue Analysis".
 - Default deliverable: **Team Uzair PDF only**. Other segments only on request.
 - Data: `data/revenue_history.csv` (per day × caller × team × vertical). Never drop a month inside
   the 12-month window. Only the current month (or an explicitly re-uploaded month) is rebuilt.
+- The monthly sheet registry and working-day calendar are in `config/monthly_sheets.json`; the scheduled task fires only on working days (RUNBOOK section C).
 - The monthly sheet registry is `config/monthly_sheets.json`. With no sheet registered for the month, do not produce deliverables.
 - Keep in-chat output brief. The analysis lives in the PDF.
 - The workbook contains customer PII (names, phones, emails). Never commit the workbook or

@@ -31,7 +31,12 @@ logs. These carried over from the Cowork project unchanged. This file records wh
   them, so this needs the user's confirmation.
 - **04 Nov 2026: analysis covers at most 12 months** (rolling retention in the PDF design spec).
   Older months stay in `data/revenue_history.csv` until they fall outside the retention window.
-- **Automation**: daily at 12:00 PM IST. With no sheet registered for the month, or a sheet not
+- **04 Nov 2026: runs only on working days.** The user supplies each month's working schedule on
+  the 1st, together with the sheet. The scheduled task's cron lists that month's working days
+  (Nov 2026: 2-6, 10-14, 16-20, 23-30). The first run of a new month closes the previous month in
+  history when its last day(s) fell on a week off (history only, no PDF). Manual
+  "Run MTD analysis" works on any day.
+- **Automation**: 12:00 PM IST on working days. With no sheet registered for the month, or a sheet not
   updated to yesterday, the run stops and notifies the user (no partial report). Delivery goes to
   the Claude session (PDF), Gmail (brief + GitHub link) and the repo `reports/YYYY-MM/`.
   Anomalies use the defaults and are asked as questions in the brief.

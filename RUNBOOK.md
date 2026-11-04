@@ -8,7 +8,7 @@ Work on branch `claude/epic-hamilton-0k0ar3` (pull it first, push to it at the e
 
 ---
 
-## A. Standard run (scheduled 12:00 PM IST, or "Run MTD analysis")
+## A. Standard run (scheduled 12:00 PM IST on working days, or "Run MTD analysis" any time)
 
 1. **Sync and set up**
    ```bash
@@ -19,6 +19,11 @@ Work on branch `claude/epic-hamilton-0k0ar3` (pull it first, push to it at the e
 2. **Plan the window**: `python3 mtd/run_mtd.py plan` (add `--till D` for "run till Dth").
    - N = yesterday (IST). On the 1st of a month, N is the last day of the previous month, so
      that month's own sheet is used and the month closes out.
+   - `prev_month_close` present: the previous month is not complete in history (its last day(s)
+     fell on a week off, e.g. 30 Nov data when 1 Dec is a holiday). **First** fetch that month's
+     sheet (step 3, its `sheet_id`, `--month` = that month) and run
+     `python3 mtd/run_mtd.py run --workbook .work/prev.xlsx --month YYYY-MM --history-only`.
+     That updates history only, without a PDF. Mention the close and any restatement in the brief. Then continue with the current month.
    - `status: NO_SHEET` means no sheet link is registered for that month. **STOP: produce no
      deliverables.** Notify the user (see step 6, "blocked" message): "Please share the
      *[Month Year]- Sales Team Reports* sheet link." Do not try to guess or search for the sheet.
@@ -57,6 +62,8 @@ Work on branch `claude/epic-hamilton-0k0ar3` (pull it first, push to it at the e
      check results, NEW anomaly questions and a link to the PDF on GitHub:
      `https://github.com/amitray-lawsikho/daily_sales_scheduled_automation/blob/claude/epic-hamilton-0k0ar3/reports/YYYY-MM/<file name, URL-encoded>`.
      Do not attach the PDF (it is too large to send through the connector reliably).
+   - If `plan` returned a `reminder` (last working day of the month), add it at the top of the
+     email and chat reply.
    - In-chat reply: **brief only**. Give the headline per produced segment, the sanity-check
      results, and the NEW anomalies phrased as questions. Take these from `reports/YYYY-MM/brief <Mon> 1-N.md`.
    - "Blocked" message (NO_SHEET / STALE / SANITY_FAIL): the same three channels, without a PDF.
@@ -81,9 +88,18 @@ Work on branch `claude/epic-hamilton-0k0ar3` (pull it first, push to it at the e
 
 ---
 
-## C. New month's sheet (the user supplies it on the 1st)
+## C. New month's sheet + working schedule (the user supplies both on the 1st)
 
-When the user shares a link such as `https://docs.google.com/spreadsheets/d/<ID>/edit…`:
+The scheduled task fires **only on working days** (the user's monthly working schedule) at 12:00 IST,
+so no tokens are spent on week-off days. Each month's schedule must be registered:
+1. Turn the user's schedule into day ranges, e.g. Nov 2026 = `2-6,10-14,16-20,23-30` (week-offs excluded).
+2. `python3 mtd/run_mtd.py set-workdays YYYY-MM "<ranges>"`. This prints the `cron` expression.
+3. Update the scheduled task "Daily MTD report — Team Uzair" (trigger `trig_017iEy7NBbmj4s12zb3CJH3t`)
+   with `update_trigger` and that `cron_expression`. The cron names the month explicitly, so it
+   never fires in a month whose schedule has not been given.
+4. If today is a working day and 12:00 IST has passed, run Section A now.
+
+When the user shares a sheet link such as `https://docs.google.com/spreadsheets/d/<ID>/edit…`:
 1. Confirm the title with the Google Sheets connector `get_spreadsheet` (fields `properties.title`).
    It should read "<Month> <Year>- Sales Team Reports" and have `BASE DATA` and `Team Members` tabs.
 2. `python3 mtd/run_mtd.py set-sheet YYYY-MM "<link>" --title "<title>"`
