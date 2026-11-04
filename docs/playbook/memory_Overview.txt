@@ -1,0 +1,26 @@
+Overview
+Last updated
+Sep 11, 2026
+Summary
+Purpose, segments, and current state of Amit's recurring monthly MTD sales analytics reporting
+
+Details
+Amit runs a recurring monthly sales analytics operation for a multi-team sales organization
+Core objective: produce timely, polished MTD (month-to-date) reports giving leadership a clear view of revenue pacing, enrollment, and achievement across verticals and callers
+Success means accurate, fully built deliverables delivered with minimal back-and-forth
+Three segments are analyzed: Team Uzair (vertical: Team Uzair only); Sales Teams (verticals: Team Uzair + Team Deepanshi + Team Darshan); Collection Teams (verticals: Team Anmol + Team Mayur)
+Key structural entities: named sales leaders per vertical, Active roster callers with monthly targets, and a locked playbook (v6/v7)
+Playbook definitions: revenue = fee paid; enrollment = rows marked "New enrollment"
+Current state
+Recurring MTD runs are actively in motion on a near-daily cadence through August 2026
+The pipeline is mature and largely stable, with standing rules handling most recurring anomalies autonomously
+Amit's communication style is minimal and directive — short trigger messages ("run mtd analysis till 29th") with the expectation that Claude executes the full pipeline end-to-end without prompting for confirmation on defaults
+A text-formatted fee row (Rs 73,155.75, Aug 12) is a known restatement item handled per default
+60 duplicate transaction IDs are counted per standing split-transaction rule
+Srashti Dwivedi (resigned, carries active August revenue): excluded from team rollups, retained in deep-dives
+Karman Kaur (resigned, no August revenue): dropped from all outputs
+Casing normalization applied to caller names across workbook and history (e.g., "swati Jha" → "Swati Jha")
+Team name aliases in standing use: DSV- Aditya → SA - Aditya; DSV- Shivam → SA - Shivam; ID Closure → ID Closure - Darshan; US accounting - Closures → US accounting closures - Deepanshi
+On the horizon
+June enrollment figures in history remain on the old definition pending receipt of the June workbook
+Ongoing monitoring of mid-month roster changes (new verticals, target changes, status changes) — Amit decides on anomalies not covered by defaults, but defaults are applied immediately if Amit doesn't respond before asking for deliverables

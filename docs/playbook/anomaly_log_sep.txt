@@ -1,0 +1,322 @@
+Anomaly & decision log — MTD Revenue Analysis
+
+Maintained by the daily run. Newest entries first. This log carries decisions the user confirmed at the pre-delivery anomaly checkpoint; the project instructions remain the master playbook and should be amended to match.
+
+Run: Sep 1–18, 2026 (19 Sep 2026) — "run mtd analysis till 18th"
+
+N = 18, D = 30. Window: Sep 1–18 vs Aug, Jul, Jun 1–18. Policy v9: three segment PDFs, no xlsx. Pipeline and history reused from the same session; no rebuild. revenue_history.csv refreshed (now ends Sep 18; 3,893 rows).
+
+Restatement — totals unchanged; the Sep 17 unattributed rows found their callers
+
+Sep 1–17 revenue and enrollments match the held history in total (Rs 3,40,39,864.47 / 908). The only movements are the two Sep 17 rows that were bucketed as Direct yesterday under Lead Details not Available; ops has since attributed them:
+
+Rs 47,115 → Ayush Srivastava (Changemakers / Team Mayur)
+Rs 21,533 → Dipak Kumar Verma (Changemakers / Team Mayur) Effect: Collection Teams Sep 17 is Rs 68,648 higher than reported on 18 Sep; company total unchanged. This confirms the standing Direct rule is safe — ops back-fills the caller within a day or two and the revenue lands in the right team on the next run. Only the Sep 15 row (Rs 21,297.64) is still unattributed.
+Roster — unchanged vs 18 Sep
+
+272 rows; active targets Rs 4,95,00,000 / 105 holders. Counselling Trainees_16th Sept (24 callers, no target) still carried. No unmapped callers; no team names outside the alias map/roster.
+
+Data quality on the window
+5,606 revenue rows, Rs 3,71,77,750.17, 960 enrollments (960 unique txn IDs).
+No text-formatted fees, no negatives. Sep 18 is the last date in the workbook.
+Duplicate Transaction IDs: 30 IDs / 60 rows / Rs 26,15,967, still including the 3 same-amount pairs from Sep 16 (Rs 2,52,671) raised on 18 Sep — unanswered.
+Convenience/Hardcopy: 14 rows / Rs 27,627, still INCLUDED.
+Lead Details not Available: 1 row / Rs 21,297.64 (Sep 15), bucketed as Direct per the standing rule.
+Sanity checks — all passed
+Enrollment share of rows: Uzair 60.2% (171/284), Sales 62.6% (249/398), Collections 13.3% (86/648).
+Direction: Uzair −17.5% rev / 206→171 enr; Sales −13.6% / 278→249; Collections −15.3% / 86→86.
+Realisation: Uzair Rs 44,529, Sales Rs 43,375 (in band); Collections Rs 2,79,817.
+Restatement: see above. 5. Roll-ups exact. 6. No xlsx.
+Day 1–18 numbers
+Segment	Sep 1-18	Aug 1-18	Jul 1-18	Jun 1-18	Enr Sep/Aug	Achv
+Team Uzair	Rs 76,14,394	Rs 92,26,857	Rs 89,21,510	Rs 87,13,004	171/206	52%
+Sales Teams	Rs 1,08,00,405	Rs 1,24,95,101	Rs 1,15,97,809	Rs 1,25,37,462	249/278	51%
+Collection Teams	Rs 2,40,64,225	Rs 2,83,95,598	Rs 2,50,35,742	Rs 3,14,73,210	86/86	284%
+
+Verticals: Uzair Rs 76,14,394 (52%) · Darshan Rs 22,35,389 (60%) · Deepanshi Rs 9,50,621 (32%) · Anmol Rs 1,10,26,585 (173%) · Mayur Rs 1,30,37,640 (630%).
+
+Run: Sep 1–17, 2026 (18 Sep 2026) — "Run MTD analysis till 17th"
+
+N = 17, D = 30. Window: Sep 1–17 vs Aug, Jul, Jun 1–17. Policy v9: three segment PDFs, no xlsx. Pipeline and history reused from the 16 Sep session (same session, no rebuild). revenue_history.csv refreshed (now ends Sep 17; 3,847 rows).
+
+DECIDED — "Lead Details not Available" rows stay under Direct
+
+User, 18 Sep: "Let it stay under direct." Standing rule from now on: a revenue row whose Team Name is Lead Details not Available with a blank caller is bucketed as Direct and sits outside all three segments. No longer raised as an anomaly each run; only the amount is reported. This run: 3 rows / Rs 89,946 (Sep 15 Rs 21,297.64; Sep 17 Rs 47,115 and Rs 21,533).
+
+Restatement — revenue unchanged, enrollments 845 → 844
+
+Sep 1–15 revenue matches the held history to the rupee. Two enrollment moves:
+
+Sep 13, Rs 2,700: Direct → Mayank (SA - Shivam, Team Anmol). Total-neutral; Direct enrollments −1, Mayank +1.
+Sep 15, Mayank Rs 1,90,096.88: the row lost its New enrollment flag (1 → 0), so Team Anmol/company enrollments are one lower on that day. Revenue unaffected. Ops correction at source?
+Roster — grew 237 → 272 rows; active target Rs 4,97,00,000 → Rs 4,95,00,000
+NEW vertical Counselling Trainees_16th Sept — 24 callers, no target, no revenue. Same shape as the 2nd Sept_Academic Counselor - Closure batch that appeared and vanished earlier this month. Carry or ignore?
+Team Abhipsha 26 → 36 callers (no targets, community books).
+Team Mayur target Rs 36,50,000 → Rs 34,50,000 / 10 holders: Sara Bansal (Changemakers, Rs 2,00,000) is now Resigned, so her target drops out of the roll-up. She has no Sep revenue.
+All five segment verticals otherwise unchanged; no unmapped callers, no team names outside the alias map/roster.
+NEW — same-amount duplicate Transaction IDs are back (3 IDs, all Sep 16)
+
+625928018568 (Rs 43,625 x 2, Mayank), 625943085444 (Rs 42,770.39 x 2, Mayank), CFL-000010807846-PRO (Rs 39,940.13 x 2, Mimansa Chandra) — 6 rows / Rs 2,52,671. Each pair is the same amount on the same day for the same caller but against two different courses (the Sep 12–14 US Accounting bootcamp and the iHub IIT Roorkee certification). Counted in full per the split-transaction rule. Genuine two-course bookings, or a double entry?
+
+Data quality on the window
+5,306 revenue rows, Rs 3,40,39,864.47, 908 enrollments (908 unique txn IDs).
+No text-formatted fees, no negatives. Sep 17 is the last date in the workbook.
+Duplicate Transaction IDs overall: 28 IDs / 56 rows / Rs 24,45,728, of which the 3 same-amount pairs above.
+Convenience/Hardcopy: 13 rows / Rs 22,048, still INCLUDED.
+Sanity checks — all passed
+Enrollment share of rows: Uzair 59.5% (154/259), Sales 61.5% (220/358), Collections 13.7% (82/598).
+Direction: Uzair −22.7% rev / 189→154 enr; Sales −18.3% / 255→220; Collections −10.9% / 76→82.
+Realisation: Uzair Rs 44,053, Sales Rs 43,678 (in band); Collections Rs 2,69,831.
+Restatement: revenue zero delta; enrollments −1 (above). 5. Roll-ups exact.
+No xlsx.
+Day 1–17 numbers
+Segment	Sep 1-17	Aug 1-17	Jul 1-17	Jun 1-17	Enr Sep/Aug	Achv
+Team Uzair	Rs 67,84,112	Rs 87,71,283	Rs 84,56,160	Rs 80,67,373	154/189	49%
+Sales Teams	Rs 96,09,136	Rs 1,17,63,441	Rs 1,09,32,479	Rs 1,14,92,879	220/255	48%
+Collection Teams	Rs 2,21,26,139	Rs 2,48,36,551	Rs 2,44,10,725	Rs 3,03,47,848	82/76	277%
+
+Verticals: Uzair Rs 67,84,112 (49%) · Darshan Rs 20,47,526 (58%) · Deepanshi Rs 7,77,497 (27%) · Anmol Rs 1,02,89,928 (171%) · Mayur Rs 1,18,36,211 (605%).
+
+Run: Sep 1–15, 2026 (16 Sep 2026) — "Run MTD Analysis till 15th"
+
+N = 15, D = 30. Window: Sep 1–15 vs Aug, Jul, Jun 1–15. Policy v9: three segment PDFs, no xlsx. Pipeline rebuilt from scratch this session; revenue_history.csv re-created on disk from the project copy (verified 3,714 rows and every month total to the rupee and enrollment) and refreshed (now ends Sep 15; 3,758 rows).
+
+Restatement — none
+
+Sep 1–14 matches the held history row for row, to the rupee and to the enrollment (Rs 2,29,90,552.28 / 815). The 15 Sep caller moves did not recur.
+
+Roster — unchanged vs 15 Sep run
+
+Active targets Rs 4,97,00,000 / 106 holders; roster 237. Non-active target rows still Kausar Khan, Kanika Sagar, Abhay Pandey (Rs 2,00,000 each, all Resigned). No unmapped callers; no team names outside the alias map/roster.
+
+NEW — question raised
+Sep 15 row with Team Name "Lead Details not Available" — Rs 21,297.64, blank caller, blank Course and Enrollment. Counted as Direct (outside all segments), same treatment as the Jul 12 row that later dropped out. Confirm it is genuine revenue and which team it belongs to.
+Data quality on the window
+4,588 revenue rows, Rs 2,75,71,051.93, 845 enrollments (845 unique txn IDs).
+No text-formatted fees, no negatives. Sep 15 is the last date in the workbook.
+Duplicate Transaction IDs: 19 IDs / 38 rows / Rs 16,84,945 (was 12 / 24 / Rs 10,45,929) — all split-amount; no same-amount duplicates.
+Convenience/Hardcopy: 10 rows / Rs 21,188, still INCLUDED.
+Sep 15: company Rs 45,80,497 in one day; Collection Teams Rs 35,98,033 (Sep 14–15 together Rs 63,54,563 for Collections).
+Sanity checks — all passed
+Enrollment share of rows: Uzair 61.1% (132/216), Sales 62.3% (185/297), Collections 14.3% (69/483); company 18.4%.
+Direction: Uzair −26.9% rev / 173→132 enr; Sales −22.9% / 234→185; Collections −21.6% / 72→69.
+Realisation: Uzair Rs 41,203, Sales Rs 42,782 (in band); Collections Rs 2,53,918.
+Restatement: zero. 5. Roll-ups exact. 6. No xlsx.
+Day 1–15 numbers
+Segment	Sep 1-15	Aug 1-15	Jul 1-15	Jun 1-15	Enr Sep/Aug	Achv
+Team Uzair	Rs 54,38,773	Rs 74,41,268	Rs 70,78,096	Rs 66,00,624	132/173	45%
+Sales Teams	Rs 79,14,619	Rs 1,02,62,420	Rs 89,88,569	Rs 96,55,359	185/234	45%
+Collection Teams	Rs 1,75,20,352	Rs 2,23,46,524	Rs 2,12,34,757	Rs 2,41,41,868	69/72	245%
+
+Verticals: Uzair Rs 54,38,773 (45%) · Darshan Rs 18,37,068 (59%) · Deepanshi Rs 6,38,778 (26%) · Anmol Rs 80,27,363 (151%) · Mayur Rs 94,92,989 (520%). Collection Teams have already passed the full-month target (Rs 1,43,00,000).
+
+Run: Sep 1–14, 2026 (15 Sep 2026) — "Run MTD analysis till 14th"
+
+N = 14, D = 30. Window: Sep 1–14 vs Aug, Jul, Jun 1–14. Policy v9: three segment PDFs, no xlsx. revenue_history.csv refreshed this run (now ends Sep 14; Jun/Jul/Aug unchanged to the rupee and to the enrollment; 3,714 rows).
+
+Restatement — day totals unchanged, three caller moves (NEW)
+
+Sep 1–10 day totals match the held history to the rupee and to the enrollment. Inside those days, three transactions changed caller (total-neutral):
+
+Sep 9, Rs 25,000: Darshan Gowda → Mudasir Zahoor (same team, ID Closure - Darshan).
+Sep 10, Rs 43,007.28: Direct → Jyoti Mishra (Corporate law - Jyoti; Jyoti has revenue but no active target).
+Sep 10, Rs 6,093.24: Shivani Sharma (US accounting closures - Deepanshi) → Shivam Sharma (SA - Shivam). Crosses verticals: Team Deepanshi −Rs 6,093, Team Anmol +Rs 6,093.
+Roster — unchanged vs 14 Sep run
+
+Active targets Rs 4,97,00,000 / 106 holders; roster 237. No unmapped callers, no team names outside the alias map/roster, no caller/team mismatches.
+
+Data quality on the window
+4,155 revenue rows, Rs 2,29,90,552.28, 815 enrollments (815 unique txn IDs).
+No text-formatted fees, no negatives. Sep 14 is the last date in the workbook.
+Duplicate Transaction IDs: 12 IDs / 24 rows / Rs 10,45,929 (was 8 / 16 / Rs 6,91,856) — all split-amount; no same-amount duplicates.
+Convenience/Hardcopy: 8 rows / Rs 20,003, still INCLUDED.
+Sep 14: company Rs 35,59,853 in one day (Collection Teams Rs 27,56,530) plus 64 more Bootcamp - Direct enrollments (Rs 1,92,000) after Sep 13's 264.
+Sanity checks — all passed
+Enrollment share of rows: Uzair 61.5% (118/192), Sales 62.9% (168/267), Collections 14.3% (57/399); company 19.6%.
+Direction: Uzair −34.0% rev / 169→118 enr; Sales −28.4% / 226→168; Collections −36.8% / 71→57.
+Realisation: Uzair Rs 40,284, Sales Rs 41,665 (in band); Collections Rs 2,44,251.
+Restatement: see above. 5. Roll-ups exact. 6. No xlsx.
+Day 1–14 numbers
+Segment	Sep 1-14	Aug 1-14	Jul 1-14	Jun 1-14	Enr Sep/Aug	Achv
+Team Uzair	Rs 47,53,567	Rs 71,97,853	Rs 64,23,609	Rs 57,77,278	118/169	42%
+Sales Teams	Rs 69,99,735	Rs 97,78,797	Rs 80,57,270	Rs 86,23,037	168/226	42%
+Collection Teams	Rs 1,39,22,318	Rs 2,20,27,064	Rs 1,89,83,449	Rs 2,00,78,803	57/71	209%
+
+Verticals: Uzair Rs 47,53,567 (42%) · Darshan Rs 16,71,346 (58%) · Deepanshi Rs 5,74,823 (25%) · Anmol Rs 61,06,839 (123%) · Mayur Rs 78,15,479 (459%).
+
+Run: Sep 1–13, 2026 (14 Sep 2026) — "run mtd analysis till 13th"
+
+N = 13, D = 30. Window: Sep 1–13 vs Aug, Jul, Jun 1–13. Policy v9: three segment PDFs, no xlsx. Pipeline rebuilt from scratch this session.
+
+Restatement — none
+
+Sep 1–10 matches the held history to the rupee and to the enrollment (Rs 1,58,14,230.40 / 339).
+
+History file NOT rewritten this run — flagged
+
+The session had no on-disk copy of revenue_history.csv; only the days 1–13 slice of Jun/Jul/Aug was reconstructed for the comparison windows (verified against this log's recorded 1–10 segment totals for all three months, exact to the rupee). The project copy of revenue_history.csv is therefore unchanged and still ends at Sep 10. Sep 11–13 rows are rebuilt from the workbook on every run, so nothing is lost, but the file should be refreshed on the next full run.
+
+Roster changes vs 11 Sep run
+Active targets Rs 4,97,00,000 / 106 holders (was Rs 4,95,00,000 / 104).
+Team Uzair target Rs 2,40,00,000 → Rs 2,42,00,000.
+Team Anmol Rs 1,06,50,000, Team Darshan Rs 62,00,000, Team Deepanshi Rs 50,00,000 active (Rs 52,00,000 on the roster rows), Team Mayur Rs 36,50,000 — all unchanged.
+Roster size 237 (unchanged). No unmapped callers; no team names outside the alias map or roster.
+NEW — questions raised
+Sep 13 bootcamp batch: 264 Bootcamp - Direct enrollments at Rs 3,000 (Rs 7,92,000) plus 66 Direct rows land on one day, taking company enrollments from 27 on Sep 12 to 342 on Sep 13. Consistent with prior bootcamp days (Jun 7, Jul 5/19, Aug 9/16) and outside all three segments — confirm it is a scheduled batch, not a backdated dump.
+Team Anmol down 63% on the same Aug window (Rs 1,16,96,182 → Rs 43,33,388) while still at 94% of pro-rated target — Aug 1–13 looks like the outlier, not Sep. Confirm the Aug base is right.
+Team Uzair enrollment-row share is 58.8% of that segment's revenue rows (100 of 170). Realisation Rs 43,513 sits mid-band, so this is the mix (few balance-payment rows in the Uzair book), not a definition drift — noting it so the plausibility check is not read as a failure.
+Data quality on the window
+3,749 revenue rows, Rs 1,94,30,699.11, 711 enrollments (711 unique Transaction IDs — the one-ID-per-enrollment check holds).
+No blank-date rows, no text-formatted Fee paid cells, no negatives (refunds still unlocated).
+Duplicate Transaction IDs: 8 IDs / 16 rows / Rs 6,91,856 — all split-amount pairs. No same-amount duplicates.
+Convenience/Hardcopy: 7 rows / Rs 19,733, still INCLUDED.
+Pre-delivery sanity checks — all passed
+Enrollment plausibility: 711 of 3,749 rows (19.0%); 510 of those sit in the Direct / Bootcamp - Direct buckets. Segment shares: Uzair 58.8%, Sales Teams 62.2%, Collection Teams 10.9%.
+Direction: revenue and enrollments move together in every segment (Uzair −33.5% rev / 151→100 enr; Sales −28.8% / 202→150; Collections −46.2% / 71→35).
+Average realisation: Team Uzair Rs 43,513, Sales Teams Rs 42,800 — both inside the Rs 20k–90k band. Collection Teams Rs 3,19,022, expected for a balance-payment book.
+Restatement: zero delta on Sep 1–10, revenue and enrollments.
+Roll-up: team revenue and enrollments equal vertical totals exactly (diff 0).
+No xlsx this run (v9 default), so no formula check.
+Day 1–13 numbers
+Segment	Sep 1-13	Aug 1-13	Jul 1-13	Jun 1-13	Enr Sep/Aug	Achv
+Team Uzair	Rs 43,51,367	Rs 65,47,901	Rs 58,16,751	Rs 56,57,471	100/151	42%
+Sales Teams	Rs 64,20,082	Rs 90,10,318	Rs 70,85,218	Rs 84,50,130	150/202	42%
+Collection Teams	Rs 1,11,65,788	Rs 2,07,56,223	Rs 1,53,97,555	Rs 1,93,32,667	35/71	180%
+
+Company total Sep 1–13: Rs 1,94,30,699 / 711 enrollments.
+
+Vertical detail (Sep 1-13 rev / Aug 1-13 rev / target / achv):
+
+Team Uzair Rs 43,51,367 / Rs 65,47,901 / Rs 2,42,00,000 / 42% / Below 50% pace
+Team Darshan Rs 15,58,486 / Rs 17,71,740 / Rs 62,00,000 / 58% / Behind pace
+Team Deepanshi Rs 5,10,229 / Rs 6,90,677 / Rs 50,00,000 / 24% / Below 50% pace
+Team Anmol Rs 43,33,388 / Rs 1,16,96,182 / Rs 1,06,50,000 / 94% / Behind pace
+Team Mayur Rs 68,32,401 / Rs 90,60,042 / Rs 36,50,000 / 432% / On/Ahead
+Run: Sep 1–10, 2026 (11 Sep 2026) — "run mtd analysis till 10th"
+
+N = 10, D = 30. Window: Sep 1–10 vs Aug, Jul, Jun 1–10. Policy v9: three segment PDFs, no xlsx. Pipeline rebuilt from scratch this session (no carried code).
+
+Restatement — none
+
+Sep 1–9 matches held history to the rupee and to the enrollment on every day (the +1 Prawal Singh row from the 10 Sep run is unchanged).
+
+Roster changes vs 10 Sep run
+Active targets Rs 4,95,00,000 / 104 holders (was Rs 5,01,00,000 / 100). Team Anmol active target Rs 1,10,50,000 → Rs 1,06,50,000: Kanika Sagar and Abhay Pandey (SA - Shivam, Rs 2,00,000 each) now Resigned. Kausar Khan (Deepanshi, Rs 2,00,000) also Resigned — excluded, no Sep revenue.
+Vertical 2nd Sept_Academic Counselor - Closure no longer in the roster.
+Roster size 237 (unchanged).
+NEW — question raised
+Team Mayur target Rs 36,50,000 vs Aug full-month Rs 2.69 crore; already 1.6x covered after 10 days (493% achv). Confirm the target basis.
+Data quality on the window
+2,685 revenue rows, Rs 1,58,14,230.40, 339 enrollments (339 unique txn IDs).
+No blank dates, no text-formatted fees, no negatives, no unmapped callers, no team names outside alias map/roster.
+Duplicate Transaction IDs: 8 IDs / 16 rows / Rs 6,91,856 (unchanged; all split pairs).
+Convenience/Hardcopy: 7 rows / Rs 19,733, still INCLUDED.
+Sanity checks — all passed
+
+Enrollments 12.6% of rows; avg realisation Uzair Rs 42,978, Sales Rs 41,879 (Deepanshi alone Rs 17,771 — enrollments 8→17 while revenue −24%, low-ticket bookings, not a definition error); roll-ups exact; history 3,597 rows.
+
+Day 1–10 numbers
+Segment	Sep 1-10	Aug 1-10	Jul 1-10	Jun 1-10	Enr Sep/Aug	Achv
+Team Uzair	Rs 33,95,276	Rs 42,88,531	Rs 44,35,393	Rs 40,53,061	79/96	42%
+Sales Teams	Rs 50,25,439	Rs 57,99,188	Rs 55,27,319	Rs 60,60,476	120/123	43%
+Collection Teams	Rs 99,38,754	Rs 1,25,37,286	Rs 1,14,18,935	Rs 1,47,38,168	28/50	209%
+Run: Sep 1–9, 2026 (10 Sep 2026) — "run mtd analysis till 9th"
+
+N = 9, D = 30. Window: Sep 1–9 vs Aug 1–9, Jul 1–9, Jun 1–9. Deliverables policy v9: three segment PDFs (Team Uzair, Sales Teams, Collection Teams), no xlsx. Line pacing charts throughout (v6 spec).
+
+RESOLVED — September targets are now loaded for ALL five sales/collection verticals
+
+Roster targets total Rs 5,01,00,000 across 100 active target-holders (vs Rs 4,12,50,000 / 83 on the 03 Sep run). Newly loaded since 03 Sep: Team Deepanshi Rs 50,00,000 (was zero) and Team Mayur Rs 36,50,000 (was zero). The "no target" suppression for Deepanshi and Mayur is retired; all three segments now carry real achievement %. NOTE: Team Deepanshi's roster row total is Rs 52,00,000, of which Rs 2,00,000 sits on a non-Active caller and is excluded from the rolled-up target per the Active-only rule.
+
+RESTATEMENT — Sep 2 enrollments +1
+
+Sep 1 matches the held history to the rupee and to the enrollment (Rs 13,83,797.87 / 13). Sep 2 revenue matches to the rupee (Rs 33,32,179.28 cumulative) but enrollments moved 36 → 37: one Prawal Singh (Changemakers / Team Mayur) row dated 2 Sep now carries Enrollment = "New enrollment" where it did not on the 03 Sep pull. Revenue unaffected. Cause looks like an ops correction at source — confirm?
+
+Data quality on the window
+2,406 revenue rows, Rs 1,40,83,806.40, 312 enrollments.
+No blank-date rows and no text-formatted Fee paid cells; no negative amounts (refunds still unlocated).
+No unmapped callers and no team names outside the alias map or roster.
+Duplicate Transaction IDs: 8 IDs / 16 rows / Rs 6,91,856 — all split-amount pairs. No same-amount duplicates.
+Convenience/Hardcopy: 7 rows / Rs 19,733, still INCLUDED.
+Roster size 237 (unchanged from 03 Sep).
+History rebuild note
+
+revenue_history.csv rebuilt this run and verified against held month totals before writing: Jun Rs 7,73,81,109.74 / 18,674 enr (still OLD definition), Jul Rs 8,65,47,621.14 / 1,954, Aug Rs 7,89,88,955.22 / 2,115 — all matching to the rupee AND to the enrollment. Sep 1–9 written as Rs 1,40,83,806.40 / 312. 3,559 rows.
+
+Day 1–9 numbers for the record
+Segment	Sep 1-9	Aug 1-9	Enr Sep	Achv
+Team Uzair	Rs 31,48,146	Rs 34,52,835	70	44%
+Sales Teams	Rs 44,86,454	Rs 47,36,390	104	42%
+Collection Teams	Rs 88,35,520	Rs 92,93,574	27	200%
+Run: Sep 1–2, 2026 (03 Sep 2026) — "run mtd analysis till 2nd"
+
+N = 2, D = 30. Two-file default (Team Uzair + Sales Teams PDFs); Collection Teams computed but not issued.
+
+RESOLVED (partly) — September targets are now loaded, but only for 3 verticals
+
+The Sep roster carried Rs 4,12,50,000 of targets across 83 callers (vs zero on the 02 Sep run). Still at zero then: Team Deepanshi, Team Mayur, Team Abhipsha, Team Garima. Fully resolved 10 Sep 2026.
+
+NEW — roster changes vs the September 2 roster
+Roster size 231 → 237 callers.
+The header renamed to Academic Counselor/TL on 02 Sep is back to Academic Counselor/TL/ATL. Unused by the playbook.
+New vertical 2nd Sept_Academic Counselor - Closure (6 callers, no target, no revenue) — gone again by 11 Sep.
+New team names visible with no revenue yet: Corporate law trainees (14), ID New Trainee - Uzair (5), ID counselors - Darshan (17), US accounting counselors - Sana (4), US accounting counselors - Deepanshi (4), US accounting counselors  Trainee - Deepanshi (4, double space), 7th August_Academic Counsellors (4), Community (4), Women ai - Community.
+Carried-forward strays still present: Team Komal (2 callers), Lead Details not Available (1).
+Data quality on the window
+504 revenue rows, Rs 33,32,179.28, 36 enrollments (restated to 37 on the 10 Sep run). Duplicate Transaction IDs: 2 IDs / 4 rows / Rs 1,64,770. Convenience/Hardcopy: 4 rows / Rs 16,789, INCLUDED.
+Run: Sep 1–1, 2026 (02 Sep 2026) — first day of the new month
+BLOCKING-ish — no September targets in the roster
+
+Every row of the Sep Team Members tab carried TARGET = 0 (231 callers). Target-based metrics were suppressed, not faked. Superseded.
+
+Verticals gone from the September roster (as expected)
+
+Team Karman Kaur and Counselling Trainees_17th August, consistent with the Aug 31 closure decision.
+
+Data quality on the day
+239 revenue rows, Rs 13,83,797.87, 13 enrollments. Duplicate Transaction IDs: 1 ID / 2 rows / Rs 82,702 (split pair). Convenience/Hardcopy: 2 rows / Rs 1,723.
+Run: Aug 1–31, 2026 (02 Sep 2026) — full-month close
+CONFIRMED — text-formatted Fee paid rows are EXCLUDED
+
+Fee paid is coerced with pd.to_numeric; non-numeric cells are dropped alongside blanks. Aug 1–31 = Rs 7,89,88,955.22 / 2,115 enrollments. Ops should still fix the cell format at source.
+
+CONFIRMED — Team Karman Kaur is CLOSED
+
+Historical June/July rows stay in revenue_history.csv as a record.
+
+Restatement — Aug 1–30 vs held history
+
+Revenue matched to the rupee; enrollments matched at 2,050. One transaction of Rs 14,000 on 13 Aug moved from Darshan Gowda to Neetu Naresh Jain (total-neutral).
+
+Duplicate Transaction IDs, Aug 1–31
+
+68 IDs / 137 rows / Rs 59,85,844 — all split-amount groups except two same-amount pairs: 2608223251 (Rs 1,01,447) and HDFC176245050f9 (Rs 79,964). Still awaiting ops confirmation.
+
+Still OPEN (carried forward)
+Same-amount duplicate Transaction IDs, Sep 16 (3 IDs / Rs 2,52,671, two courses each) — genuine two-course bookings or double entry? Raised 18 Sep, still open 19 Sep.
+New roster vertical Counselling Trainees_16th Sept (24 callers, no target, no revenue) — carry or ignore? Raised 18 Sep.
+Sep 15 Mayank enrollment flag dropped (Rs 1,90,096.88 row, 1 → 0) — ops correction at source? Raised 18 Sep.
+Sep 13 bootcamp batch (264 enrollments / Rs 7,92,000 in one day) — scheduled batch or backdated dump? Raised 14 Sep.
+Team Anmol Aug 1–13 base (Rs 1.17 crore vs Sep Rs 43.3 lakh) — confirm the Aug window is genuine. Raised 14 Sep.
+Team Uzair target moved Rs 2,40,00,000 → Rs 2,42,00,000 — confirm final. Raised 14 Sep.
+Sep 1–10 caller re-attributions (3 moves, incl. Shivani Sharma → Shivam Sharma across verticals) — confirm ops corrections. Raised 15 Sep.
+Team Mayur target scale (Rs 36.5 lakh vs Aug actual Rs 2.69 crore) — raised 11 Sep. Collection Teams passed the full-month target on 15 Sep.
+Sep 2 enrollment restatement (+1, Prawal Singh) — ops correction at source?
+June 2026 enrollments remain on the OLD (overstated) definition — 18,674 for the month vs 2,115 for Aug and 1,954 for Jul on the corrected v6 basis. June revenue is unaffected. Upload the June 2026 workbook to restate.
+Stray roster verticals with no revenue callers: Team Komal (2 callers) and Lead Details not Available (1). Map or have ops clean?
+Convenience/Hardcopy fee rows — still INCLUDED in revenue (Sep 1–18: 14 rows / Rs 27,627). Include or exclude going forward?
+Where are refunds recorded? BASE DATA still contains no negative amounts.
+Rs 6,00,000 of target on Resigned callers (Kausar Khan, Kanika Sagar, Abhay Pandey — Rs 2,00,000 each) — excluded per the Active-only rule; reassign?
+Same-amount duplicate transaction IDs (Aug: 2 IDs, Rs 1,81,411) — ops to confirm these are genuine split entries.
+Text-formatted Fee paid cells — ops to fix at source. None in Sep 1–15.
+Closed
+"Lead Details not Available" rows — DECIDED 18 Sep: always bucketed as Direct, outside all segments; reported as an amount, not raised as an anomaly.
+revenue_history.csv stale at Sep 10 — refreshed 15, 16 and 18 Sep (now ends Sep 17).
+September targets missing — fully resolved 10 Sep 2026.
+US accounting closures - Deepanshi with no September target — resolved.
+New vertical 2nd Sept_Academic Counselor - Closure — gone from the roster as of the 11 Sep run.
+Team Karman Kaur — closed 02 Sep 2026; absent from the September roster.
+Counselling Trainees_17th August — absent from the September roster.
+Text-formatted fee rows — rule set (exclude), 02 Sep 2026.
+v6.1 alias map additions (ID - Community Manager → ID - Community, Criminal - Community Manager → Criminal - Community, CD - Community Manager → CD - Community) applied and stable.
+'Elite - Trainee' (June) — its Jun rows sit under vertical "Team Uzair" in history; still unresolved whether to merge into Elite.

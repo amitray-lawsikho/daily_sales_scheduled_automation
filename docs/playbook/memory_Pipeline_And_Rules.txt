@@ -1,0 +1,26 @@
+Pipeline And Rules
+Last updated
+Oct 9, 2026
+Summary
+Standing data-handling rules, pipeline stages, file paths, and tooling for MTD runs
+
+Details
+Standing rules and learnings
+Proceed on defaults, don't block on anomalies: if Amit asks "where are the files" without addressing flagged anomalies, that is a directive to apply defaults and deliver immediately — do not wait
+Active-only roster for targets: resigned callers are excluded from target rollups; those with real revenue are retained in deep-dives only
+Text-fee rows must be explicitly parsed: comma-formatted strings silently drop from numeric parsing and must be caught and included
+Casing normalization is critical: split bars and split history entries result from casing mismatches; normalize at ingestion and flag for source correction
+History integrity: June and July full-month totals must remain unchanged across runs; only the current MTD window is rebuilt
+In-chat communication: keep brief; surface anomalies concisely; apply defaults and build if no response before deliverable request
+Pipeline stages
+Pickled DataFrames across stages: bd.pkl, bd1.pkl, tm.pkl, cur.pkl, roster.pkl, curagg.pkl, newh.pkl, data.pkl
+Paths and tooling
+Source files: /mnt/project/ (history CSV, design spec, deliverables policy); /mnt/user-data/uploads/ (uploaded Excel workbooks, named e.g. "August_2026 Sales Team Reports")
+Output path: /mnt/user-data/outputs/
+Working directory: /home/claude
+PDF rendering: matplotlib Agg backend via PdfPages; visual QA via pdftoppm -png -r 78
+Key layout modules: chart_utils.py, build_pdf.py
+xlsx generation: openpyxl (implied by color-fill and autofilter spec)
+ID Calling - Uzair has been dispersed into Team Uzair (Oct 2026); treat it as Elite in all MTD outputs and history — it should no longer appear as its own team
+Academic writing team has been dispersed into other teams (Oct 2026); it should no longer appear as its own team
+Removed teams must never appear in MTD outputs — when teams change, only current (live) teams are reported

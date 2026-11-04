@@ -1,0 +1,114 @@
+MTD Report PDF — Design Specification (locked, v6 — 03 Sep 2026)
+
+This is the fixed visual design for the "MTD Report [Mon] 1-N - [Segment].pdf" deliverables. It must be used on every run, without variation. This spec governs layout/design only — it does not change any data, definitions, or numbers (those are governed by the main playbook). Which segment PDFs are actually produced is governed by deliverables_policy.md (v8: Team Uzair only, by default).
+
+Page setup
+Orientation: LANDSCAPE, always. Never portrait.
+Page size: 841.68 x 595.44 pt (~A4 landscape).
+Margins: left/right 0.5in, top 0.85in (room for header block), bottom 0.42in (room for footer).
+Content width ≈ 10.69in, split into two ≈5.15in columns with a 0.35in gap wherever a two-column chart layout is used.
+Header (every page, identical structure)
+Line 1: bold, dark navy (
+#12253F), 16pt — the page's title (varies by page type, see below).
+Line 2: gray (
+#6B7280), 8.3pt — fixed subtitle: Window: 1-N [Mon] 2026 (last complete day) vs same window [prior months] | Generated [date] | Playbook v6
+A thin horizontal rule (
+#D5D9E0) beneath the subtitle.
+Footer (every page)
+Left, gray (
+#9AA1AC), 7.5pt: [Segment label] | page N of TOTAL
+Right, same style: a page-type-specific context note (see below).
+Page 1 — Segment overview
+Title: MTD Report — [Mon] 1-N, 2026 — [Segment] Footer-right: Revenue = Fee paid; Enrollment = "New enrollment" (v6)
+KPI card strip — 5 rounded-rectangle cards side by side (never a table): MTD Revenue · vs prev-month window (%, green/red) · Achievement % (color-coded by flag threshold) · Enrollments (current, with prev in subtext) · Pending Revenue. Each card: small gray label top-left, large bold value below it, small gray subtext line at the bottom.
+Two-column chart row: left = cumulative day-by-day revenue pacing LINE chart — ALL months currently held in history (up to the 12-month retention window), not just current vs one prior month. Current month = solid navy, thicker, with markers, drawn on top. Every prior month = a distinct hue from the prior-month cycle below, each with its own dash pattern — never a blue gradient / shade ramp (changed 31 Aug 2026: shades of blue were indistinguishable in the line and in the legend). Legend lists every month plotted (2 columns if more than 5 months, to avoid crowding). Right = team revenue grouped bar chart (prev window light-blue vs current navy, data labels) — this bar chart stays a 2-way (prev vs current) comparison; only the LINE charts expand to the full multi-month history. Data labels on ALL revenue bar charts (team bars and per-caller bars, both on page 1 and on every team deep-dive page) are Rs lakh shown to 2 decimal places (e.g. 35.91, 2.83) — never rounded to a whole number.
+A narrative paragraph (not bullets) below the charts: pacing vs target, same-window momentum, largest book, biggest gain, biggest drag — with numbers, key terms bolded.
+Pacing charts are ALWAYS LINE CHARTS (added 03 Sep 2026, v6)
+The cumulative pacing chart is a line chart at every value of N, including N = 1 and N = 2. There is no short-window substitution.
+The "one bar per month" adaptation improvised for N < 3 on the 02 Sep 2026 run is retired and must not be used again. The user asked for the line form explicitly: "Revenue pacing graphs came in line graphs which was better i want in that way only just the lines should be of different colour as i mentioned earlier."
+At N = 1 the chart is a single marker per month; that is acceptable. Month colours, dash patterns, line weights and legend follow the locked cycle below in all cases.
+Page 2 — Caller pacing
+Title: Caller pacing — [Segment]. Footer-right: Achievement % = revenue [Mon] 1-N / (monthly target x N/D)
+Two-column horizontal bar charts: left = "Bottom 15 pacers" (red <50%, amber 50–99%, excludes zero-revenue holders), right = "Top 10 pacers" (green, ≥100%). Both have a dashed vertical "On-pace (100%)" reference line and data labels. The left chart's legend sits upper-right and the right chart's lower-right, so neither overlaps a bar label.
+Below: a red bold line listing zero-revenue target holders (count + names, since they're excluded from the bottom chart); a gray line listing callers with revenue but no active target (excluded from both charts).
+If a vertical carries no targets at all, target-based metrics are suppressed rather than faked, and the footer-right says so. (This applied to the whole roster on 02 Sep 2026; as of 03 Sep it applies only to Team Deepanshi and Team Mayur.)
+Page 3 — Key points
+Title: Key points — [Segment]. Footer-right: Analysis only — all data tables live in the matching xlsx
+Bulleted list, each bullet starting with a bold lead-in label + colon (e.g. Pacing:, Biggest driver:, Biggest drag:, Risk:, Caller-level:), followed by plain text with specific numbers. Generous spacing between bullets (~11pt). The bullet body is left-aligned to a common indent measured from the widest lead-in label, so labels never overlap the text.
+The "NEW anomalies to confirm" bullet must NEVER appear on this page, or anywhere else in the PDF (changed 17 Aug 2026). Anomalies are a pre-delivery checkpoint, not PDF content — see "Anomalies workflow" below. They may still be logged in the xlsx Rules & Anomalies tab.
+Per-team deep-dive pages (one per team, after the fixed pages)
+Title: Team deep dive — [Team] (+  ([Vertical]) when the segment spans >1 vertical). Footer-right: Team deep dive.
+One KPI line (not a table): bold key numbers with | separators — MTD Rs X | vs [PrevMon] window: Rs Y (+Z%) | Achv: A% of pro-rated Rs B | Enrollments: C → D | Pending: Rs E | [Flag, colored] The line is measured and auto-shrunk (9.6pt down to 6.6pt) so it always fits the content width on one line; the flag keeps its status colour.
+Two-column chart row: left = team cumulative pacing line chart — same multi-month (up to 12-month) multi-hue style as page 1; right = per-caller grouped bar chart (prev vs current, Rs lakh, caller names on X-axis).
+Below: Zero-revenue target holders in [Team] (N): [names or "none"].
+Gray footnote: Callers evaluated: N | on/ahead of pace X | behind Y | below 50% Z | zero W | no target V. Team columns are full-window aggregates and may exceed the sum of listed callers.
+Colors (fixed palette)
+Pacing LINE charts — month colours (v5, 31 Aug 2026)
+
+Prior months must be visually distinct hues, not shades of one colour. The old light-to-dark blue gradient is retired: at three or more months the lines and the legend swatches were not separable.
+
+Current month: navy 
+#2E5FA3 — always. Solid, 2.6pt, circle markers, drawn on top.
+Prior months: assigned from this cycle by recency, most-recent prior first, so a given month keeps the same colour as history grows:
+Order (most recent prior first)	Hex	Name
+1	
+#0F8C82	teal
+2	
+#D2691E	burnt orange
+3	
+#7E57C2	violet
+4	
+#C2185B	magenta
+5	
+#6E8B3D	olive
+6	
+#00838F	dark cyan
+7	
+#8D6E63	taupe
+8	
+#B8860B	dark goldenrod
+9	
+#4527A0	deep indigo
+10	
+#33691E	forest
+11	
+#A0522D	sienna
+Prior months are 1.7pt and also carry rotating dash patterns ((5,2), (1.6,1.6), (7,2,1.6,2), (3,1.5,1.5,1.5)) so the chart still reads when printed in greyscale. Legend: 7.2pt, handle length 2.6 so the dash pattern is visible.
+This cycle deliberately avoids the flag red 
+#C0392B and the flag green 
+#3E8E5A, so a month line is never mistaken for a pace-status colour.
+Everything else (unchanged)
+Grouped bar charts stay two-tone: prev window light blue-gray 
+#AFC3DC vs current navy 
+#2E5FA3. Only the LINE charts use the multi-hue cycle.
+Green (on/ahead of pace): 
+#3E8E5A | Amber (behind pace / 50–99%): 
+#D68910 | Red (zero rev / <50%): 
+#C0392B
+Header navy: 
+#12253F | Body gray text: 
+#6B7280 / 
+#9AA1AC
+Number formats on charts
+Revenue bar-chart data labels: Rs lakh, 2 decimal places (e.g. 35.91).
+Achievement %/pacing bar-chart data labels: whole percent (e.g. 66%).
+KPI cards and all rupee text in headers/KPI lines: whole rupees with thousands separator (e.g. Rs 7,558,964) — these are NOT lakh values and are not affected by the 2-decimal rule.
+Long label handling (added 31 Aug 2026)
+Team names on bar-chart X axes are shortened from the head, never the tail, so the distinguishing suffix survives (US accounting closures - Deepanshi → US accounting c.. - Deepanshi, not US accounting closures). Two teams sharing a prefix must never render as the same label.
+Anomalies workflow (changed 17 Aug 2026)
+After building the data pipeline and identifying NEW anomalies for the run, ask the user about them in chat — anomalies are a pre-delivery checkpoint, not deliverable content.
+The "NEW anomalies to confirm" bullet is removed entirely from the PDF Key Points page. It may still be logged in the xlsx Rules & Anomalies tab for the record.
+All other Key Points bullets (Pacing, Biggest driver, Biggest drag, Risk, Caller-level, Top pending-revenue holders, Read with care) are unchanged and still appear in the PDF.
+History retention (governs data behind the charts — see main playbook too)
+Keep a rolling 12-month window in revenue_history.csv. Never erase or drop a month's data on a routine run. A month may only be dropped once it is more than 12 months older than the current run's month (e.g. June 2026 data is retained through the June 2027 run, and may be dropped starting the July 2027 run).
+Updating history each run is additive: it replaces/rebuilds the current month's days 1..N (and any prior month explicitly re-uploaded for restatement), and must never remove a past month that is still inside the 12-month window.
+The multi-month pacing charts always plot every month inside that 12-month window that has data for the given entity (team/vertical/segment) — so as more months accumulate, the trend view gets richer automatically, capped at 12 lines per chart. The 11-colour prior-month cycle covers a full 12-month window (11 priors + the navy current month) without repeating a hue.
+What must NOT vary run-to-run
+Orientation (landscape), page size, margins, header/footer structure, KPI-card layout, two-column chart layout, line form for pacing charts, color palette, and font sizes are all fixed by this spec.
+Only the underlying data, numbers, chart values, bullet content, and page count (driven by number of teams) may vary between runs.
+Change log
+v6 — 03 Sep 2026: pacing charts are always line charts, at every N; the N < 3 "bar per month" substitution used on 02 Sep is retired at the user's request. Page-2 legend placement fixed so it no longer overlaps a bar label. Chart areas enlarged to fill the page height. Long-label head-truncation now preserves the " - Suffix" part intact.
+v5 — 31 Aug 2026: pacing-line month colours changed from a blue shade ramp to an 11-hue distinct-colour cycle with rotating dash patterns, at the user's request ("the graph line colour or the legend colour of months is the shade of blue which is difficult to identify... use a multi colour pattern"). Also added: head-truncation for long team labels, auto-fit team KPI line, measured indent for Key Points bullets.
+v4 — 17 Aug 2026: anomalies removed from PDF Key Points; multi-month pacing lines; 2-decimal lakh data labels.
+
+This spec is implemented in chart_utils.py and pdf_builder.py of the analysis pipeline. Any future change to this design requires explicit user confirmation before being applied, per the project's "ask before deviating from any rule" instruction.

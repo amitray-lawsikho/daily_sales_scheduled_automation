@@ -1,0 +1,71 @@
+Run: Sep 1–30, 2026 (04 Oct 2026) — "Prepare MTD analysis till 30th sep" (FULL MONTH)
+
+N = 30 = D. Three segment PDFs (10 / 12 / 7 pages). History saved to claude/revenue_history.csv (Sep complete 1–30; 4,383 rows).
+
+10,093 rows, Rs 7,52,32,558.38, 1,971 enrollments (1,971 unique txn IDs). No negatives. 30 Sep alone Rs 38,27,439 / 43 enr.
+RESTATEMENT Sep 1–29: +Rs 9,598.04 (held Rs 7,13,95,521.72 → Rs 7,14,05,119.76); enrollments unchanged at 1,928.
+28 Sep Direct "9,598.04" is now a numeric fee in the workbook → now counted (was dropped as text).
+Caller re-attributions (net zero): Jyoti Mishra → Rashi Bindal (8 & 15 Sep, Rs 94,525) and → Pooja Sonaniya (10 Sep, Rs 43,007); Jatin Prajapati → Somya Sharma (14/16/24/26/29 Sep, Rs 1,19,196, 3 enrollments); 29 Sep Bhoomika Saxena (CD - Community, Abhipsha) Rs 46,192 → Shikha Chahar (Changemakers) and Sruthy George (Criminal - Community, Abhipsha) Rs 54,000 → Prawal Singh (Changemakers) — moves Rs 1,00,192 into the Collection segment.
+Roster 280 rows; active targets Rs 4,91,00,000/103 → Rs 4,86,00,000/102: Bharat Kathpalia (Corporate law - Anas, Rs 5,00,000) now Resigned, Rs 98,407 Sep revenue → "No target".
+Text fee "3,000.00" (25 Sep, Direct) still text — dropped per rule.
+Dup txn IDs 85 / 170 rows / Rs 71,47,168 (4 same-amount, unchanged). Convenience/Hardcopy 28 rows / Rs 40,307 included.
+Sanity: enr share Uzair 60%, Sales 60%, Coll 14%; realisation Uzair Rs 47,137, Sales Rs 47,829; roll-ups exact; no unmapped callers/teams.
+Segment	Sep 1-30	Aug 1-30	Jul 1-30	Jun 1-30	Enr Sep/Aug	Achv (full month)
+Team Uzair	Rs 1,48,95,172	Rs 1,66,37,786	Rs 1,85,69,731	Rs 1,60,54,382	316/336	63%
+Sales Teams	Rs 2,14,27,547	Rs 2,24,84,397	Rs 2,49,49,693	Rs 2,21,86,322	448/451	62%
+Collection Teams	Rs 4,90,84,095	Rs 4,64,71,488	Rs 5,22,95,147	Rs 5,02,48,097	179/147	353%
+
+Verticals: Uzair 63% · Darshan 69% · Deepanshi 46% · Anmol 197% · Mayur 827%.
+
+Run: Sep 1–29, 2026 (30 Sep 2026) — "MTD analysis till 29th"
+
+N = 29, D = 30. Three segment PDFs (10 / 12 / 7 pages). History saved to claude/revenue_history.csv (ends Sep 29; 4,342 rows).
+
+9,733 rows, Rs 7,13,95,521.72, 1,928 enrollments (1,928 unique txn IDs). No negatives. 29 Sep alone Rs 49,66,342 / 37 enr.
+RESTATEMENT: none — Sep 1–28 matches history to the rupee (Rs 6,64,29,179.52; 1,891 enrollments).
+Roster 280 rows; active targets Rs 4,93,00,000/104 → Rs 4,91,00,000/103. Likely cause: Anjali Bhardwaj (Academic writing - Sana, Rs 2,00,000) now Resigned — Rs 999 Sep revenue, now shows as "No target". Asked user to confirm.
+Text fees unchanged: "3,000.00" (25 Sep) and "9,598.04" (28 Sep), both Direct — dropped per rule.
+Dup txn IDs 78 / 156 rows / Rs 65,75,108 (4 same-amount, unchanged). Convenience/Hardcopy 24 rows / Rs 33,433 included.
+Sanity: enr share Uzair 60%, Sales 60%, Coll 14%; realisation Uzair Rs 47,358, Sales Rs 47,930; roll-ups exact; no unmapped callers/teams; zero team mismatches.
+Segment	Sep 1-29	Aug 1-29	Jul 1-29	Jun 1-29	Enr Sep/Aug	Achv
+Team Uzair	Rs 1,43,49,368	Rs 1,56,93,922	Rs 1,71,33,473	Rs 1,52,15,713	303/324	62%
+Sales Teams	Rs 2,05,14,139	Rs 2,15,40,533	Rs 2,31,47,910	Rs 2,12,51,518	428/439	60%
+Collection Teams	Rs 4,61,38,999	Rs 4,57,85,433	Rs 4,97,07,565	Rs 4,74,85,865	168/143	300%
+
+Verticals: Uzair 62% · Darshan 67% · Deepanshi 45% · Anmol 191% · Mayur 804%.
+
+Run: Sep 1–28, 2026 (29 Sep 2026) — "run mtd analysis till 28th"
+
+N = 28, D = 30. Three segment PDFs (10 / 12 / 7 pages). History saved to claude/revenue_history.csv (ends Sep 28; 4,285 rows). Roster unchanged (280 rows; Rs 4,93,00,000 / 104 active targets).
+
+9,369 rows, Rs 6,64,29,179.52, 1,891 enrollments (1,891 unique txn IDs). No negatives.
+RESTATEMENT: none — Sep 1–27 matches history to the rupee (Rs 6,24,94,162.13; 1,816 enrollments).
+NEW text-formatted fee "9,598.04" (28 Sep, Direct) — dropped per rule, along with the known "3,000.00" (25 Sep, Direct).
+Dup txn IDs 70 / 140 rows / Rs 59,40,593 (4 same-amount, unchanged). Convenience/Hardcopy 24 rows / Rs 33,433 included.
+Sanity: enr share Uzair 60%, Sales 60%, Coll 14%; realisation Uzair Rs 46,176, Sales Rs 46,922; roll-ups exact; no unmapped callers/teams.
+Segment	Sep 1-28	Aug 1-28	Jul 1-28	Jun 1-28	Enr Sep/Aug	Achv
+Team Uzair	Rs 1,32,06,467	Rs 1,52,23,071	Rs 1,64,82,932	Rs 1,46,25,154	286/315	58%
+Sales Teams	Rs 1,90,03,518	Rs 2,09,25,888	Rs 2,23,31,453	Rs 2,03,72,331	405/429	58%
+Collection Teams	Rs 4,28,23,270	Rs 4,48,28,416	Rs 4,67,31,325	Rs 4,47,02,600	158/140	330%
+
+Verticals: Uzair 58% · Darshan 66% · Deepanshi 42% · Anmol 183% · Mayur 776%.
+
+Run: Sep 1–27, 2026 (28 Sep 2026)
+
+Uzair Rs 1,24,87,562 (57%) · Sales Rs 1,80,20,497 (57%) · Collections Rs 4,00,28,994 (300%). Restatement: 15 Sep Rs 21,297.64 Direct → Shikha Chahar (Changemakers); 25 Sep Prawal Singh +1 enrollment. Dup IDs 62/124/Rs 52,49,935.
+
+Run: Sep 1–25, 2026 (26 Sep 2026)
+
+Uzair Rs 1,11,50,659 (55%) · Sales Rs 1,61,50,592 (55%) · Collections Rs 3,69,03,396 (319%). No restatement. Text fee "3,000.00" (25 Sep, Direct) dropped. Dup IDs 55/110/Rs 46,62,236.
+
+Run: Sep 1–24, 2026 (25 Sep 2026)
+
+Uzair Rs 1,06,25,893 (55%) · Sales Rs 1,53,63,836 (54%) · Collections Rs 3,55,46,773 (320%). Restatement: Sep 1–18 enrollments 960 → 961 (Rahul Kumar, SA - Aditya, 17 Sep).
+
+Run: Sep 1–23, 2026 (24 Sep 2026)
+
+Uzair Rs 1,02,84,571 (55%) · Sales Rs 1,47,51,472 (54%) · Collections Rs 3,36,22,196 (315%).
+
+Run: Sep 1–22, 2026 (23 Sep 2026)
+
+Roster 272 → 280; new vertical Counselling Trainees_22nd Sept; Rizwan Khan Resigned.

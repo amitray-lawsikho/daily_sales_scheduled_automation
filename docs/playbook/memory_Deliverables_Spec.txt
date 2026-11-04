@@ -1,0 +1,32 @@
+Last updated
+Sep 11, 2026
+Summary
+Full MTD deliverable set — PDF contents, xlsx column/sort/color spec, history CSV, and run window
+
+Details
+MTD run window: days 1 to (today − 1)
+Pro-ration formula: target × (N / days-in-month), where N = days 1 through (today − 1)
+Full deliverable set per run: 6 files + history
+PDFs (3, one per segment — analysis only)
+KPI strip
+Cumulative pacing chart
+Team July-vs-August grouped bar chart
+Caller achievement charts (top/bottom achievers, horizontal bars)
+Key insight points narrative page
+Per-team deep-dive pages (ordered by vertical, then revenue descending)
+No data tables in PDFs
+xlsx files (3, one per segment — data layer)
+Three sheets each: By Caller / By Team / By Vertical
+Fixed columns: Caller/Team/Vertical | Sales Leader | Current Month Target | Pro-rated Target (Till N / days-in-month) | Rev [prev-mon] 1–N | Rev [cur-mon] 1–N | Achievement % ([cur-mon] 1–N) | Δ vs prev month | Enroll prev + current month | IIT prev + current month | Pending Revenue | Flag
+By Caller sort: Team → Flag → current revenue descending
+Full-row color fills by flag: ZERO REVENUE = pink; Below 50% = peach; Behind pace = yellow; On/Ahead = green; No target = grey
+Autofilter on headers
+History
+Updated revenue_history.csv: full prior months + current MTD window
+Design spec (locked, playbook v6)
+Landscape A4
+Navy 
+#2E5FA3, green 
+#3E8E5A, amber 
+#D68910, red 
+#C0392B

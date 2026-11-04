@@ -1,0 +1,31 @@
+Deliverables policy — v9 (07 Sep 2026)
+
+This replaces the "## Deliverables every run (7 files)" heading and its opening line in the project instructions, and supersedes v8 (03 Sep 2026). Everything under it — the PDF page spec, the xlsx tab/column spec, and the revenue_history.csv spec — is unchanged.
+
+Deliverables (3 files by default)
+
+Default every run — THREE PDFs:
+
+MTD Report [Mon] 1-N - Team Uzair.pdf
+MTD Report [Mon] 1-N - Sales Teams.pdf
+MTD Report [Mon] 1-N - Collection Teams.pdf
+
+That is the whole delivery. When the user says "run MTD analysis till [date]" (or any equivalent trigger) with no further qualification, produce all three segment PDFs, send them, and give the in-chat brief. Do not produce or send any xlsx unless asked.
+
+Each PDF follows pdf_design_spec.md in full — segment pages 1-3 plus one deep-dive page per team in that segment. Segment 2 (Sales Teams) still repeats Team Uzair's team pages so every PDF stands alone.
+
+revenue_history.csv is still rebuilt and saved back to the project on every run. It is not a delivered file and is not sent to chat unless asked for.
+
+The xlsx set is on request only, e.g. "include the xlsx", "give me all files". Asking for the full set produces the original 7: these three PDFs, three xlsx (same three segments), plus revenue_history.csv.
+
+Partial requests still work as before: "[segment] only" produces just that segment's PDF (and its xlsx only if the xlsx set was also requested).
+
+What still runs every time regardless of file count
+The full pipeline for all three segments — required for the sanity checks, roll-up checks and the per-segment in-chat headline lines.
+All six pre-delivery sanity checks, reported in chat.
+The anomaly checkpoint — NEW anomalies are still raised in chat as questions, never inside the PDFs.
+The in-chat summary carries one headline line per segment.
+Rationale
+v7 (21 Aug 2026): cut from 7 files to 2 to reduce per-run cost.
+v8 (03 Sep 2026): cut to the Team Uzair PDF alone, at the user's request.
+v9 (07 Sep 2026): raised back to the three segment PDFs — Team Uzair, Sales Teams, Collection Teams — at the user's request: "give me 3 pdf deliverables one is for Team Uzair, one is for Sales teams another for collections. Also make this my current deliverable policy for regular usage." The xlsx set stays on-request only.

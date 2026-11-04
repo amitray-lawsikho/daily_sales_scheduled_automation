@@ -1,0 +1,54 @@
+{
+  "2026-11": {
+    "anomaly_keys": [
+      "unplaced:Team Karman Kaur:Team Karman Kaur"
+    ],
+    "roster": [
+      236,
+      41783000.0,
+      91
+    ],
+    "last_run": {
+      "N": 3,
+      "generated": "04 Nov 2026",
+      "segments": [
+        "Team Uzair"
+      ]
+    }
+  },
+  "columns": [
+    "Brand",
+    "Dasboard Status",
+    "Date",
+    "Name",
+    "Contact No",
+    "Email Id",
+    "Manual/ Online Enroll",
+    "Course",
+    "Total fees paid (for Ops)",
+    "Fee paid",
+    "Full/Installment (Welcome callers MIS)",
+    "Retained revenue",
+    "Mode of payment",
+    "Transaction ID",
+    "Finance Dashboard",
+    "USD/GBP/Euro",
+    "International Amount",
+    "Caller name (for ops) for enrollment link circulation",
+    "Enrollment",
+    "Source",
+    "Course Price",
+    "Enrollment of this month",
+    "Team Name",
+    "Director Assign",
+    "Vertical Name",
+    "True/False",
+    "Source Type",
+    "Collection Caller",
+    "Community Head",
+    "Academic Counselor/TL/ATL",
+    "Leader",
+    "Joining Date",
+    "fee"
+  ]
+}

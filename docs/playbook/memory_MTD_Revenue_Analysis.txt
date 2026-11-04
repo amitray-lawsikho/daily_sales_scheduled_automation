@@ -1,0 +1,4 @@
+Last updated
+Sep 11, 2026
+Summary
+MTD Revenue Analysis — Recurring monthly MTD sales analytics reports (PDFs, xlsx, history) for a multi-team sales org.
