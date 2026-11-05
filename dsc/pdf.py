@@ -172,13 +172,13 @@ def _simple_axes(ax, title):
 
 def chart_week_revenue(res: Result, tm: str, w=3.4, h=2.0):
     g = _weeks(res, tm)
-    lab = [f"{d:%d %b}" for d in g["week"]]
+    lab = [x.replace(" ", "\n", 1) for x in g["label"]]
     cols = ["#C9CED6" if not c else (GREEN if r >= t else RED) for r, t, c in zip(g["revenue"], g["run_rate"], g["complete"])]
     fig, ax = plt.subplots(figsize=(w, h))
     bars = ax.bar(lab, g["revenue"] / 1e5, color=cols, width=.62)
     ax.plot(lab, g["run_rate"] / 1e5, color="#1F2937", ls="--", lw=1, marker="_", ms=10)
     _bar_labels(ax, bars, lambda v: f"{v:.1f}")
-    _simple_axes(ax, "Revenue per week (Rs lakh) vs target - - -")
+    _simple_axes(ax, "Revenue per part (Rs lakh) vs target - - -")
     top = np.nanmax([g["revenue"].max(), g["run_rate"].max(), 0])
     ax.set_ylim(0, top / 1e5 * 1.25 + .1)
     fig.tight_layout()
@@ -187,7 +187,7 @@ def chart_week_revenue(res: Result, tm: str, w=3.4, h=2.0):
 
 def chart_week_count(res: Result, tm: str, col: str, title: str, fmt, color, w=3.4, h=1.75):
     g = _weeks(res, tm)
-    lab = [f"{d:%d %b}" for d in g["week"]]
+    lab = [x.replace(" ", "\n", 1) for x in g["label"]]
     fig, ax = plt.subplots(figsize=(w, h))
     bars = ax.bar(lab, g[col].fillna(0), color=[color if c else "#C9CED6" for c in g["complete"]], width=.62)
     _bar_labels(ax, bars, fmt)
@@ -199,7 +199,7 @@ def chart_week_count(res: Result, tm: str, col: str, title: str, fmt, color, w=3
 
 
 def _change(g: pd.DataFrame, col: str):
-    """Mean of the last 2 complete weeks vs the 2 before, or None."""
+    """Mean of the last 2 complete parts vs the 2 before, or None."""
     c = g[g["complete"]]
     if len(c) < 4:
         return None
@@ -214,17 +214,17 @@ def week_takeaways(res: Result, tm: str) -> list[str]:
     if len(c):
         hit = int((c["revenue"] >= c["run_rate"]).sum())
         last = c.iloc[-1]
-        out.append(f"<b>Revenue</b>: on target in <b>{hit} of {len(c)}</b> full weeks. Last week {lakh(last['revenue'])} vs target "
+        out.append(f"<b>Revenue</b>: on target in <b>{hit} of {len(c)}</b> full parts. Last part ({last['label']}) {lakh(last['revenue'])} vs target "
                    f"{lakh(last['run_rate'])} (<font color='{pace_color(last['revenue'] / last['run_rate'] * 100 if last['run_rate'] else np.nan)}'>"
                    f"<b>{pct(last['revenue'] / last['run_rate'] * 100 if last['run_rate'] else np.nan)}</b></font>).")
-    for col, name, d in (("followups", "Follow-ups", 0), ("deep_per_day", "Counselling calls (15 min+) per caller/day", 1)):
+    for col, name, d in (("followups_per_wd", "Follow-ups per working day", 1), ("deep_per_day", "Counselling calls (15 min+) per caller/day", 1)):
         ch = _change(g, col)
         if ch:
             a, b, p_ = ch
             word = "up" if p_ > 5 else "down" if p_ < -5 else "flat"
             colr = GREEN if p_ > 5 else RED if p_ < -5 else G1
-            out.append(f"<b>{name}</b>: <font color='{colr}'><b>{word} {abs(p_):.0f}%</b></font> - last 2 weeks "
-                       f"{b:,.{d}f}/week vs {a:,.{d}f}/week the 2 weeks before." if col == "followups" else
+            out.append(f"<b>{name}</b>: <font color='{colr}'><b>{word} {abs(p_):.0f}%</b></font> - last 2 parts "
+                       f"{b:,.{d}f} vs {a:,.{d}f} the 2 parts before." if col == "followups_per_wd" else
                        f"<b>{name}</b>: <font color='{colr}'><b>{word} {abs(p_):.0f}%</b></font> - {b:.1f} vs {a:.1f} before.")
     return out
 
@@ -346,7 +346,7 @@ def overview(res: Result, story):
     # check matrix
     story.append(P("The seven checks at a glance", "h2"))
     names = {1: "1 Revenue data correct and fresh", 2: f"2 Run-rate on {res.prev_wd:%a %d %b}",
-             3: f"3 Early warning off track {CFG['early_warning']['weeks_running']} weeks running",
+             3: f"3 Early warning off track {CFG['early_warning']['weeks_running']} parts running",
              4: f"4 Below {CFG['mtd']['min_pct']}% of MTD target after the {CFG['mtd']['after_day']}th",
              5: f"5 High-intent leads not dialled > {CFG['leads']['untouched_hours']} h",
              6: f"6 Top {CFG['top_bottom']['n']} / bottom {CFG['top_bottom']['n']} callers",
@@ -443,12 +443,12 @@ def key_points(res: Result) -> str:
 
 def trends_page(res: Result, story):
     story.append(PageBreak())
-    story.append(Title("Trends - what changed week by week"))
-    story.append(P("Week by week, one column per team. Bars = full weeks (Mon-Sun); the grey bar is this week so far.", "small"))
+    story.append(Title("Trends - part by part (1-10, 11-20, 21-end of month)"))
+    story.append(P("One column per team. Each bar is a part of the month, as in Part Wise; the grey bar is the current part so far.", "small"))
     cols = []
     for tm in TEAMS:
         cell = [P(f"<b>{tm}</b>", "h2"), chart_week_revenue(res, tm),
-                chart_week_count(res, tm, "followups", "Follow-ups set per week", lambda v: f"{v:.0f}", "#0F8C82"),
+                chart_week_count(res, tm, "followups_per_wd", "Follow-ups set per working day", lambda v: f"{v:.1f}", "#0F8C82"),
                 chart_week_count(res, tm, "deep_per_day", "Counselling calls (15 min+) per caller per day",
                                  lambda v: f"{v:.1f}", "#7E57C2"),
                 Spacer(0, 2)] + [P("&bull; " + t, "p") for t in week_takeaways(res, tm)]
@@ -490,26 +490,27 @@ def checks_page(res: Result, story):
                      rs(t["mtd"]), rs(t["prorated"]), P(f"<font color='{pace_color(t['achv_pct'])}'><b>{pct(t['achv_pct'])}</b></font>"),
                      rs(t["required_rr"])])
     story.append(table(rows, [1.5 * inch] + [(CW - 1.5 * inch) / 9] * 9))
-    story.append(P(f"3. Early warning - last {CFG['early_warning']['weeks_running']} complete weeks", "h2"))
+    story.append(P(f"3. Early warning - last {CFG['early_warning']['weeks_running']} complete parts of the month", "h2"))
     wt = res.weekly_team
     ew = getattr(res, "ew_weeks", [])
-    rows = [["Team"] + [f"Week of {w:%d %b}" for w in ew] + ["Off track?"]]
+    lbl = dict(zip(wt["week"], wt["label"]))
+    rows = [["Team"] + [lbl.get(w, f"{w:%d %b}") for w in ew] + ["Off track?"]]
     for tm, (off, g) in getattr(res, "team_ew", {}).items():
-        cells = [f"{rs(r.revenue)} vs run-rate {rs(r.run_rate)}" for r in g.itertuples()]
+        cells = [f"{rs(r.revenue)} vs target {rs(r.run_rate)}" for r in g.itertuples()]
         rows.append([tm] + cells + [P(f"<font color='{RED if off else GREEN}'><b>{'Yes' if off else 'No'}</b></font>")])
     if len(rows) > 1:
         story.append(table(rows, [1.6 * inch] + [(CW - 2.4 * inch) / max(len(ew), 1)] * len(ew) + [0.8 * inch]))
     e = res.early
     if e is not None and len(e):
         story.append(Spacer(0, 3))
-        rows = [["Team", "Caller", "Number off track", "Caller (week by week)", "Team median", "Below by"]]
+        rows = [["Team", "Caller", "Number off track", "Caller (part by part)", "Team median", "Below by"]]
         for r in e.sort_values(["team", "caller"]).itertuples():
             below = np.mean([(1 - v / b) * 100 for v, b in zip(r.values, r.benchmarks)])
             rows.append([short(r.team), r.caller, EW_LABEL[r.metric], " / ".join(f1(v) for v in r.values),
                          " / ".join(f1(b) for b in r.benchmarks), f"{below:.0f}%"])
         story.append(table(rows, [1.2 * inch, 1.4 * inch, 1.3 * inch, 1.5 * inch, 1.5 * inch, 0.8 * inch]))
     story.append(P(f"Caller off track = below {CFG['early_warning']['off_track_pct_of_benchmark']}% of the team median "
-                   f"(callers, not team leaders) in each of the last {CFG['early_warning']['weeks_running']} complete weeks.",
+                   f"(callers, not team leaders) in each of the last {CFG['early_warning']['weeks_running']} complete parts of the month.",
                    "small"))
     story.append(CondPageBreak(2.2 * inch))
     story.append(P(f"6. Top {CFG['top_bottom']['n']} and bottom {CFG['top_bottom']['n']} callers (achievement of pro-rated target)", "h2"))
@@ -532,16 +533,16 @@ def team_pages(res: Result, tm: str, story):
     story.append(Spacer(0, 3))
     story.append(Table([[chart_daily(res, tm), chart_pacing(res, tm)]], colWidths=[CW / 2] * 2))
     wt = res.weekly_team[res.weekly_team["team"] == tm]
-    rows = [["Week", "Revenue", "Run-rate", "vs RR", "Enrol.", "Calls/day", "Answered", "3-min/day", "15-min+/day",
+    rows = [["Part", "Revenue", "Target", "vs target", "Enrol.", "Calls/day", "Answered", "3-min/day", "15-min+/day",
              "Talk h/day", "Follow-ups", "FU/day", "Zip Hi+Mod"]]
     for r in wt.itertuples():
         vr = r.revenue / r.run_rate * 100 if r.run_rate else np.nan
-        rows.append([f"{r.week:%d %b}" + ("" if r.complete else " (so far)"), rs(r.revenue), rs(r.run_rate),
+        rows.append([r.label + ("" if r.complete else " (so far)"), rs(r.revenue), rs(r.run_rate),
                      P(f"<font color='{pace_color(vr)}'><b>{pct(vr)}</b></font>"), r.enrolments, f1(r.calls_per_day, 0),
                      pct(r.connect_pct), f1(r.conv3_per_day), f1(r.deep_per_day, 2), f1(r.talk_hrs_per_day),
                      r.followups, f1(r.followups_per_day),
                      "-" if not r.fu_zip_rated else f"{pct(r.fu_himod_pct)} of {r.fu_zip_rated}"])
-    story.append(P("Weekly trend (Mon-Sun; per caller per active day; FU Zip High+Mod = follow-ups whose Zipteams "
+    story.append(P("Part by part (1-10, 11-20, 21-end; per caller per active day; FU Zip High+Mod = follow-ups whose Zipteams "
                    "intent was High or Moderate, of those with a rated Zipteams note)", "h2"))
     story.append(table(rows, [1.0 * inch] + [(CW - 1.0 * inch) / 12] * 12))
 
@@ -656,7 +657,7 @@ def why_card(res: Result, r) -> Table:
     if r.next_step:
         extra.append(f"<b>Next step</b>: {r.next_step}")
     if r.trend_note:
-        extra.append(f"<b>Last 2 weeks vs the 2 before</b>: {r.trend_note}.")
+        extra.append(f"<b>Last 2 parts vs the 2 before</b>: {r.trend_note}.")
     if r.late_days:
         extra.append(f"Late check-in on {r.late_days} day(s); breaks {f1(r.break_hrs_per_day)} h/day.")
     rows.append([P(" ".join(extra), "cell"), "", "", ""])
@@ -691,9 +692,9 @@ def definitions(res: Result, story):
                     "open in the 'Follow-up Status' sheet (not Actually Enrolled / Not Interested / ...), not in BASE DATA as a new "
                     "enrolment. Not dialled = no call to that number by anyone for more than "
                     f"{CFG['leads']['untouched_hours']} h before the latest call in the data."),
-        ("Early warning", f"Last {CFG['early_warning']['weeks_running']} complete Mon-Sun weeks; a caller is off track on a number when "
+        ("Early warning", f"Last {CFG['early_warning']['weeks_running']} complete parts of the month (1-10, 11-20, 21-end); a caller is off track on a number when "
                           f"it is below {CFG['early_warning']['off_track_pct_of_benchmark']}% of the team median in every one of "
-                          "those weeks. Team leaders (TL / ATL / Manager / AD) are not flagged."),
+                          "those parts. Team leaders (TL / ATL / Manager / AD) are not flagged."),
         ("Why", f"Funnel order: attendance, dialling, connectivity, conversations (3-min+), counselling depth (15-min+), "
                 f"follow-ups, closing (enrolments per 100 follow-ups), ticket size. Benchmark = median of the team's top 3 by "
                 f"MTD revenue; the first step below {CFG['root_cause']['gap_pct']}% of it is the primary reason."),

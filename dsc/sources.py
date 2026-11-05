@@ -57,7 +57,8 @@ class Data:
 def windows(day: date) -> dict:
     """Date windows the loaders need for a report day."""
     t = CFG["trend"]
-    weeks_from = day - timedelta(days=day.weekday()) - timedelta(weeks=t["weeks"])
+    from dsc.analysis import month_parts
+    weeks_from = month_parts(day, t.get("parts", 7))[0][0]
     return {"months_from": add_months(month_first(day), -(t["months"] - 1)),
             "weeks_from": min(weeks_from, month_first(day)),
             "leads_from": day - timedelta(days=CFG["leads"]["lookback_days"])}

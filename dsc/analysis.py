@@ -2,7 +2,7 @@
 
 Checks (manager's list):
   1 data is fresh and complete            2 team run-rate on the previous working day
-  3 early-warning numbers off track two weeks running
+  3 early-warning numbers off track two parts of the month running (parts 1-10, 11-20, 21-end)
   4 team below 70% of pro-rated MTD target after the 15th
   5 high-intent leads not dialled for more than 24 h (callers and numbers)
   6 top three and bottom three callers
@@ -103,6 +103,20 @@ def _div(a, b):
 
 def week_start(d: date) -> date:
     return d - timedelta(days=d.weekday())
+
+
+def month_parts(day: date, n: int) -> list[tuple[date, date, str]]:
+    """The last n parts of the month up to `day`: (first day, last day of the part, label like 'Oct 11-20').
+    Parts as in Part Wise: 1-10, 11-20, 21-end of month."""
+    out, m = [], add_months(month_first(day), -((n + 2) // 3))
+    while m <= day:
+        end = add_months(m, 1) - timedelta(days=1)
+        for lo, hi in ((1, 10), (11, 20), (21, end.day)):
+            a, b = m.replace(day=lo), m.replace(day=hi)
+            if a <= day:
+                out.append((a, b, f"{a:%b} {lo}-{hi}"))
+        m = add_months(m, 1)
+    return out[-n:]
 
 
 def is_lead(role: str) -> bool:
@@ -536,12 +550,15 @@ def trends(res: Result, data, rev, agent, cday, stages, targets):
     mo["achv_pct"] = _div(mo["revenue"], mo["prorated"]) * 100
     res.monthly = mo
 
-    # weekly (Mon-Sun), last N weeks up to the report day
-    w_end = week_start(D)
-    weeks = [w_end - timedelta(weeks=i) for i in range(t["weeks"] - 1, -1, -1)]
+    # parts of the month (as in Part Wise: 1-10, 11-20, 21-end), the last N up to the report day.
+    # Internally a part is still called a "week" row (week = its first day, week_end = last day used).
+    parts = month_parts(D, t.get("parts", 7))
     wrows, crows = [], []
-    for ws in weeks:
-        we = min(ws + timedelta(days=6), D)
+    for ws, we_full, label in parts:
+        we = min(we_full, D)
+        complete = we_full <= D
+        wd_part = [d for d in (ws + timedelta(days=i) for i in range((we - ws).days + 1))
+                   if d in month_working_days(month_key(d))[0]]
         wdays = [ws + timedelta(days=i) for i in range((we - ws).days + 1)]
         # run-rate of each day = that month's daily run-rate, working days only
         rr = {}
@@ -562,7 +579,8 @@ def trends(res: Result, data, rev, agent, cday, stages, targets):
             callers = ga["caller"].unique()
             active = int((ga["total_calls"] > 0).sum())
             fu_n = int(fuc.reindex(callers).fillna(0).sum())
-            wrows.append({"team": tm, "week": ws, "week_end": we, "complete": ws + timedelta(days=6) <= D,
+            wrows.append({"team": tm, "week": ws, "week_end": we, "complete": complete, "label": label,
+                          "working_days": len(wd_part), "followups_per_wd": _div(fu_n, len(wd_part)),
                           "revenue": g["revenue"].sum(), "enrolments": int(g["enrolments"].sum()), "run_rate": rr.get(tm, 0),
                           "calls_per_day": _div(ga["total_calls"].sum(), active),
                           "connect_pct": _div(ga["answered"].sum(), ga["total_calls"].sum()) * 100,
@@ -575,8 +593,8 @@ def trends(res: Result, data, rev, agent, cday, stages, targets):
             active = int((ga["total_calls"] > 0).sum())
             gc = c[c["caller"] == name]
             fu_n = int(fuc.get(name, 0))
-            crows.append({"caller": name, "team": ga["team_now"].iloc[0], "week": ws,
-                          "complete": ws + timedelta(days=6) <= D, "active_days": active,
+            crows.append({"caller": name, "team": ga["team_now"].iloc[0], "week": ws, "label": label,
+                          "complete": complete, "active_days": active,
                           "revenue": rc.loc[rc["caller"] == name, "revenue"].sum(),
                           "calls_per_day": _div(ga["total_calls"].sum(), active),
                           "connect_pct": _div(ga["answered"].sum(), ga["total_calls"].sum()) * 100,
@@ -679,7 +697,7 @@ def root_cause(res: Result):
             elif x["mtd"] == 0 and x["active_days"] > 0:
                 df.at[i, "primary"] = "Activity in line with the top 3 but no revenue yet"
                 df.at[i, "next_step"] = "Check the follow-up list for leads ready to pay; TL to join closing calls."
-            # trend: last 2 complete weeks vs the 2 before
+            # trend: last 2 complete parts vs the 2 before
             if wc is not None and len(wc):
                 cw = wc[(wc["caller"] == x["caller"]) & wc["complete"]].sort_values("week")
                 if len(cw) >= 4:
@@ -727,15 +745,15 @@ def checks(res: Result):
     E = CFG["early_warning"]
     for tm, (off, g) in getattr(res, "team_ew", {}).items():
         if off:
-            parts = "; ".join(f"wk {r.week:%d %b}: Rs {r.revenue:,.0f} vs Rs {r.run_rate:,.0f}" for r in g.itertuples())
-            F.append(Flag(3, tm, "Team", f"Weekly revenue below run-rate {E['weeks_running']} weeks running ({parts}).",
-                          "Review the follow-up pipeline with the TL; plan closures for this week.", "red"))
+            parts = "; ".join(f"{r.label}: Rs {r.revenue:,.0f} vs target Rs {r.run_rate:,.0f}" for r in g.itertuples())
+            F.append(Flag(3, tm, "Team", f"Revenue below target {E['weeks_running']} parts of the month running ({parts}).",
+                          "Review the follow-up pipeline with the TL; plan closures for this part of the month.", "red"))
     if res.early is not None and len(res.early):
         for (tm, caller), g in res.early.groupby(["team", "caller"]):
             ms = "; ".join(f"{EW_LABEL[r.metric]} " + " / ".join(f"{v:.1f}" for v in r.values) + " vs team "
                            + " / ".join(f"{b:.1f}" for b in r.benchmarks) for r in g.itertuples())
-            F.append(Flag(3, tm, caller, f"Off track {E['weeks_running']} weeks running: {ms}.",
-                          "TL 1:1 this week on these numbers; re-check next Monday.", "amber"))
+            F.append(Flag(3, tm, caller, f"Off track {E['weeks_running']} parts of the month running: {ms}.",
+                          "TL 1:1 on these numbers; re-check at the end of this part (10th / 20th / month end).", "amber"))
     # 4
     M = CFG["mtd"]
     if res.day.day > M["after_day"]:

@@ -29,7 +29,7 @@
     "weeks_running": 2,
     "off_track_pct_of_benchmark": 75,
     "metrics": ["calls_per_day", "connect_pct", "conv3_per_day", "deep_per_day", "talk_hrs_per_day", "followups_per_day"],
-    "_note": "Check 3. For each of the last completed weeks (Mon-Sun), a caller's number is off track when it is below off_track_pct_of_benchmark % of the team benchmark (median of the team's callers that week). Flagged when off track weeks_running weeks in a row. Team revenue is off track when a week's revenue is below that week's run-rate (target / working days x working days in the week)."
+    "_note": "Check 3. Periods are parts of the month (1-10, 11-20, 21-end; Amit 5 Nov 2026). For each of the last completed parts, a caller's number is off track when it is below off_track_pct_of_benchmark % of the team benchmark (median of the team's callers that week). Flagged when off track weeks_running parts in a row (the key keeps its old name). Team revenue is off track when a part's revenue is below that part's target (target / working days x working days in the part)."
   },
 
   "mtd": {"after_day": 15, "min_pct": 70,
@@ -65,7 +65,8 @@
     "_note": "Zipteams writes a 'Zipteams Notes' activity (237) to the lead in LSQ after each call; intent in mx_Custom_1 = HIGH / MODERATE / NEUTRAL / LOW / NOT_AVAILABLE (as in the sales_automation_01 project). Notes of the last 'days' days are read. A follow-up takes the intent of the lead's latest note from match_days before to match_days after the follow-up date (matched by Prospect ID). Zipteams intent is one input, never the answer."
   },
 
-  "trend": {"months": 4, "weeks": 6},
+  "trend": {"months": 4, "parts": 7,
+            "_note": "Parts of the month as in Part Wise: 1-10, 11-20, 21-end (Amit, 5 Nov 2026: weeks were confusing). The last 'parts' parts are shown."},
 
   "drive_folder_id": "1Q2ShWDipHnZgmDD2FZQOvPQ3D9fzDL47",
   "drive_subfolder": "Daily Sales Check",
