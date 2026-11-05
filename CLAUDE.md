@@ -16,8 +16,8 @@ Amit sends the new month's **Sales Team Reports link** and **working schedule** 
    (`["2-6", "10-14", "16-20", "23-30"]`). Note the week offs in `_note`.
 2. Check the sheet has `Team Members` and `BASE DATA` tabs (Google Sheets connector, header row only).
 3. Run `python -m unittest discover -s tests -t .` and `python -m partwise.schedule --today <a working day>`.
-4. Commit. The file must reach `main` before the 1st (the schedule only runs from the default branch). Ask Amit
-   whether to push to `main` directly or open a PR.
+4. Commit and push to `main` directly (Amit, 5 Nov 2026: "push to main always, don't ask"). The file must reach
+   `main` before the 1st (the schedule only runs from the default branch).
 
 If he says "teams have changed", diff the new Team Members tab against the previous month's, and list the moves and
 new resignations before anything else. The latest Team Members sheet applies to the whole month (rule from 9 Oct 2026).
