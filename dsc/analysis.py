@@ -193,7 +193,7 @@ def run(data) -> Result:
     team_of = dict(zip(roster["caller"], roster["team"]))
     agent["team_now"] = agent["caller"].map(team_of).fillna(agent["team"])
 
-    res.fu_zip = followup_zip(stages, data.zip)
+    res.fu_zip = followup_zip(stages, data.zip, getattr(data, "lsq_leads", None))
     quality(res, data, rev, agent, roster)
     mtd_rev = rev[(rev["month"] == month) & (rev["d"] <= D)]
     teams_frame(res, mtd_rev, tt, P)
@@ -361,11 +361,20 @@ def callers_frame(res: Result, data, rev, agent, cday, stages, roster, P):
 ZIP_LEVELS = ["HIGH", "MODERATE", "NEUTRAL", "LOW"]
 
 
-def followup_zip(stages: pd.DataFrame, z) -> pd.DataFrame:
+def followup_zip(stages: pd.DataFrame, z, lsq=None) -> pd.DataFrame:
     """Each follow-up (stage row) with the Zipteams intent of its lead's latest note within match_days of the
-    follow-up date, matched by Prospect ID. zip = HIGH / MODERATE / NEUTRAL / LOW, or "" (no rated note)."""
-    fu = stages[stages["stage"] == "followup"].copy()
-    fu["prospect_id"] = (fu["prospect_id"] if "prospect_id" in fu else pd.Series("", index=fu.index)).fillna("").astype(str)
+    follow-up date, matched by Prospect ID. zip = HIGH / MODERATE / NEUTRAL / LOW, or "" (no rated note).
+    A row without a Prospect ID (the LSQ stage report has none) takes it from any other row or LSQ lookup of
+    the same phone."""
+    st = stages.reset_index(drop=True)
+    pid = (st["prospect_id"] if "prospect_id" in st else pd.Series("", index=st.index)).fillna("").astype(str).replace("nan", "")
+    by_phone = dict(zip(st.loc[pid.str.len() > 0, "phone"], pid[pid.str.len() > 0]))
+    fu = st[st["stage"] == "followup"].copy()
+    if lsq is not None and len(lsq):
+        ok = lsq["prospect_id"].fillna("").astype(str).str.len() > 0
+        by_phone.update(dict(zip(lsq.loc[ok, "phone"], lsq.loc[ok, "prospect_id"].astype(str))))
+    own = pid.loc[fu.index]
+    fu["prospect_id"] = own.where(own.str.len() > 0, fu["phone"].map(by_phone)).fillna("")
     fu["zip"] = ""
     if z is None or not len(z) or not len(fu):
         return fu
@@ -715,7 +724,7 @@ def root_cause(res: Result):
                         va, vb = a[k].mean(), b[k].mean()
                         if pd.notna(va) and va > 0 and pd.notna(vb):
                             ch = (vb - va) / va * 100
-                            if abs(ch) >= 20:
+                            if abs(ch) >= 20 and whole(va) != whole(vb):   # whole numbers: skip "1 -> 1"
                                 notes.append(f"{lab} {whole(va)} -> {whole(vb)} ({ch:+.0f}%)")
                     df.at[i, "trend_note"] = "; ".join(notes)
     res.callers = df

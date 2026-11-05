@@ -189,7 +189,11 @@ class LiveStage(unittest.TestCase):
             {"date": "2026-11-03", "prospect_id": "Z-1", "level": "HIGH", "created_ist": "2026-11-03 12:00:00"},
             {"date": "2026-11-03", "prospect_id": "Z-2", "level": "LOW", "created_ist": "2026-11-03 12:00:00"},
             {"date": "2026-10-20", "prospect_id": "Z-3", "level": "HIGH", "created_ist": "2026-10-20 12:00:00"}])  # too old
+        # the stage report's copy of a follow-up has no Prospect ID: it borrows the sheet row's (same phone)
+        data.stages = pd.concat([data.stages, pd.DataFrame([
+            {"date": "2026-11-04", "phone": "9100000001", "stage": "followup", "owner": "Good Two", "src": "report", "prospect_id": ""}]).astype(str)])
         c = A.run(data).callers.set_index("caller")
+        self.assertEqual(c.loc["Good Two", "zip_high"], 1)
         self.assertEqual((c.loc["Good One", "zip_high"], c.loc["Good One", "zip_low"]), (1, 1))
         self.assertEqual(c.loc["Good One", "zip_himod_pct"], 50)
         self.assertEqual(c.loc["Slow Dialler", "zip_rated"], 0)
