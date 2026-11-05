@@ -34,11 +34,13 @@ new resignations before anything else. The latest Team Members sheet applies to 
 - Verticals: Team Uzair, Team Deepanshi, Team Darshan. Don't add new ones (for example Team Abhipsha) unless asked.
 - Lead = unique phone (last 10 digits). Connected = longest single call ≥ 40 s, otherwise DNP.
 - A lead counts in every stage it reached. Uzair stages come from its own workbook; Deepanshi and Darshan stages come from the stage report.
-- Stage changes by people not in Team Members are dropped from the main columns and listed on the QC tab.
+- Stage changes by people not in Team Members are dropped from the main columns and listed in the run summary.
 - Conversions = every "New enrollment" BASE DATA row (split payments count twice, never de-duplicated).
 - Discovery → / Roadmap → Enrollments: unique enrolled phones, Roadmap wins, stage at any time this month or in the
   3 prior months, no roster filter, phone match only.
 - A percentage with a zero denominator shows 0.0%. There is no Discovery→Roadmap % column.
+- Workbook: P1, P2, P3 and Monthly Analysis only. No "Definitions & QC" tab and no frozen panes (Amit,
+  5 Nov 2026); the QC notes go to the GitHub Actions run summary.
 - Always use `norm_phone` (float `.0` bug) and `norm_stage` (`Roadmap\xa0Done`) on new feeds.
 
 ## Secrets

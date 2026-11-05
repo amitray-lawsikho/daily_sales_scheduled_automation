@@ -2,7 +2,8 @@
 
 Builds **"<Month>: Part Wise Performance"** in the Drive folder *Team performance & Reports › Partwise Data*
 every working day at **12:00 IST**, covering the 1st of the month to yesterday. It is the same report the
-cowork project produced from manual uploads (P1 1-10, P2 11-20, P3 21-EOM, Monthly Analysis, Definitions & QC),
+cowork project produced from manual uploads (P1 1-10, P2 11-20, P3 21-EOM, Monthly Analysis; no frozen rows/columns). The data-quality checks of each run
+are on the GitHub Actions run page (Summary),
 with the inputs fetched automatically:
 
 | Input | Where it comes from now |
@@ -64,5 +65,4 @@ The workflow runs from the default branch, so month files must be on `main`.
 
 ## Rules
 
-Unchanged from the cowork project (confirmed by Amit Sep–Oct 2026). See the *Definitions & QC* tab of any report
-and `CLAUDE.md`.
+Unchanged from the cowork project (confirmed by Amit Sep–Oct 2026). See `CLAUDE.md`.

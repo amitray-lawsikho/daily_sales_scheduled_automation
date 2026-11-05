@@ -66,7 +66,9 @@ class Report(unittest.TestCase):
         self.assertEqual(summary["Conversions (enrollments)"], 3)    # split payment = 2 rows
         self.assertEqual(summary["Discovery -> Enrollments"], 1)
         self.assertEqual(summary["Roadmap -> Enrollments"], 1)       # off-roster prior-month stage counts
-        self.assertEqual(wb.sheetnames, ["P1 (1-10)", "P2 (11-20)", "P3 (21-30)", "Monthly Analysis", "Definitions & QC"])
+        self.assertEqual(wb.sheetnames, ["P1 (1-10)", "P2 (11-20)", "P3 (21-30)", "Monthly Analysis"])
+        for ws in wb.worksheets:
+            self.assertIsNone(ws.freeze_panes)
 
 
 if __name__ == "__main__":
