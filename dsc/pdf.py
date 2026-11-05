@@ -227,8 +227,10 @@ def week_takeaways(res: Result, tm: str) -> list[str]:
         ch = _change(g, col)
         if ch:
             a, b, p_ = ch
-            if whole(a) == whole(b):   # whole numbers only: same rounded value reads as no change
+            if pd.notna(a) and pd.notna(b) and whole(a) == whole(b):   # whole numbers only: same rounded value reads as no change
                 out.append(f"<b>{name}</b>: about the same, {f1(b)} in the last 2 parts.")
+                continue
+            if pd.isna(p_):
                 continue
             word = "up" if p_ > 5 else "down" if p_ < -5 else "flat"
             colr = GREEN if p_ > 5 else RED if p_ < -5 else G1
