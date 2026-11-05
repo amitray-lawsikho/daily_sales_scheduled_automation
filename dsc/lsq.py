@@ -31,7 +31,7 @@ ZIP_COLS = ["date", "prospect_id", "level", "created_ist"]
 
 
 class LSQ:
-    GAP, BULK_GAP = 0.35, 2.5
+    GAP, BULK_GAP = 0.5, 2.5
 
     def __init__(self):
         host = os.environ.get("LSQ_HOST", "").strip()
@@ -139,7 +139,7 @@ def lead_status(cands: pd.DataFrame, fresh: dict, api: LSQ | None = None) -> pd.
     except RuntimeError as e:
         fresh["lsq_leads"] = f"NOT checked in LSQ ({e}); current stage from the Team Uzair 'Follow-up Status' sheet only"
         return pd.DataFrame(columns=STATUS_COLS)
-    rows, errors = [], 0
+    rows = []
     cands = cands.drop_duplicates("phone").copy()
     cands["prospect_id"] = cands["prospect_id"].fillna("").astype(str).replace("nan", "")
 
@@ -152,22 +152,34 @@ def lead_status(cands: pd.DataFrame, fresh: dict, api: LSQ | None = None) -> pd.
 
     t0 = time.time()
     budget = CFG.get("lsq_budget_minutes", {}).get("stages", 8) * 60
-    for r in cands.itertuples():
-        if time.time() - t0 > budget:
-            fresh["lsq_leads_budget"] = "time budget reached"
-            break
-        try:
-            lead = api.lead_by_id(r.prospect_id) if r.prospect_id else None
-            if lead:
-                keep(lead, "by Prospect ID", r.phone)
-                continue
-            leads = api.leads_by_phone(r.phone)
-            if leads:   # several leads can share a number: the one changed last decides
-                keep(max(leads, key=lambda x: str(x.get("ModifiedOn") or "")), "by phone", r.phone)
-        except requests.RequestException:
-            errors += 1
-            if errors >= 15:
-                break
+    errors_box = [0]
+
+    def work(part: pd.DataFrame, client: LSQ):
+        for r in part.itertuples():
+            if time.time() - t0 > budget:
+                fresh["lsq_leads_budget"] = "time budget reached"
+                return
+            if errors_box[0] >= 15:
+                return
+            try:
+                lead = client.lead_by_id(r.prospect_id) if r.prospect_id else None
+                if lead:
+                    keep(lead, "by Prospect ID", r.phone)
+                    continue
+                leads = client.leads_by_phone(r.phone)
+                if leads:   # several leads can share a number: the one changed last decides
+                    keep(max(leads, key=lambda x: str(x.get("ModifiedOn") or "")), "by phone", r.phone)
+            except requests.RequestException:
+                errors_box[0] += 1
+
+    # two readers, each one request at a time (about 4-5 a second together, well under the account's 30 per 5 s)
+    readers = 1 if not isinstance(api, LSQ) else 2
+    parts = [cands.iloc[i::readers] for i in range(readers)]
+    clients = [api] + [LSQ() for _ in range(readers - 1)]
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=readers) as ex:
+        list(ex.map(work, parts, clients))
+    errors = errors_box[0]
     out = pd.DataFrame(rows, columns=STATUS_COLS)
     n = len(cands)
     fresh["lsq_leads"] = (f"{len(out):,} of {n:,} candidate leads read from LSQ in {time.time() - t0:.0f} s "

@@ -1,6 +1,6 @@
 # Part Wise Connectivity + Daily Sales Check – instructions for Claude sessions on this repo
 
-Two scheduled reports for Amit Ray (amitray@lawsikho.in). `.github/workflows/daily-reports.yml` starts at 11:45 IST
+Two scheduled reports for Amit Ray (amitray@lawsikho.in). `.github/workflows/daily-reports.yml` starts at 11:40 IST
 every day: on a working day it first makes sure the Revenue and Calling dashboards have refreshed after 11:30 IST
 (`python -m dsc.refresh`, which starts and waits for a refresh if needed; both Supabase projects also have an
 11:35 IST pg_cron refresh, added 5 Nov 2026 so the 12:00 MTD routine sees fresh dashboards too), then runs

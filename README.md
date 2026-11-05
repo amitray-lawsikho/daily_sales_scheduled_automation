@@ -1,6 +1,6 @@
 # Scheduled sales reports (Part Wise Connectivity + Daily Sales Check)
 
-Both run from **Actions › Daily reports (12:00 IST)**: at 11:45 IST it checks that the Revenue and Calling dashboards
+Both run from **Actions › Daily reports (12:00 IST)**: at 11:40 IST it checks that the Revenue and Calling dashboards
 have refreshed after 11:30 (the revenue sheet is complete about then), starts a refresh and waits if not, then
 builds both reports. Week-off days stop in seconds.
 

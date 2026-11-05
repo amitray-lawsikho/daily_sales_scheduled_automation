@@ -197,8 +197,9 @@ def load_calling(day: date, w: dict, fresh: dict) -> tuple[pd.DataFrame, pd.Data
         touches = t.groupby("phone")["last_call"].max().reset_index()
     fresh["latest_call"] = str(touches["last_call"].max()) if len(touches) else None
 
-    st = pd.DataFrame(db.keyset("stage_changes", "id,date,phone,new_stage,changed_by,first_name,last_name",
-                                [("date", f"gte.{w['months_from']}"), ("date", f"lte.{day}")]))
+    # day by day in parallel (the date index makes each day quick; one long id-ordered scan was ~90 s)
+    st = pd.DataFrame(db.by_day("stage_changes", "id,date,phone,new_stage,changed_by,first_name,last_name", "date",
+                                w["months_from"], day))
     stages = pd.DataFrame(columns=FILES["stages"])
     if len(st):
         st["stage"] = norm_stage(st["new_stage"]).map(STAGE_KEY).values
@@ -303,6 +304,12 @@ def load_live(day: date) -> Data:
     w, fresh = windows(day), {}
     t0 = time.time()
     step = lambda name: print(f"[{time.time() - t0:5.0f} s] {name}", flush=True)
+    from dsc.analysis import lead_candidates
+    from dsc.lsq import lead_status as lsq_lead_status, load_zipteams
+    # Zipteams depends on nothing else: read it in the background while the rest loads
+    zfresh: dict = {}
+    pool = ThreadPoolExecutor(max_workers=1)
+    zjob = pool.submit(load_zipteams, day - timedelta(days=CFG["zipteams"]["days"]), day, zfresh)
     rev = load_revenue(day, w, fresh)
     step(f"revenue: {len(rev):,} rows")
     agent, call_day, touches, st = load_calling(day, w, fresh)
@@ -311,16 +318,16 @@ def load_live(day: date) -> Data:
     step(f"sheets: {len(targets):,} team-list rows, {len(uz):,} Uzair stage rows, {len(enrolled):,} enrolled phones")
     stages = pd.concat([st, uz], ignore_index=True)
     stages = stages[stages["phone"].str.len() == 10].drop_duplicates(["date", "phone", "stage", "owner"])
-    from dsc.analysis import lead_candidates
-    from dsc.lsq import lead_status as lsq_lead_status, load_zipteams
-    z = load_zipteams(day - timedelta(days=CFG["zipteams"]["days"]), day, fresh)
-    step(f"Zipteams: {fresh.get('zipteams')}")
     # only my teams' leads: stage set by a caller on this or last month's team list (LSQ load stays small)
     months = {month_key(day), month_key(add_months(month_first(day), -1))}
     mine = set(targets.loc[targets["month"].isin(months), "caller"])
     cands = lead_candidates(day, stages[stages["owner"].isin(mine)], touches, enrolled)
     lsq = lsq_lead_status(cands[["phone", "prospect_id"]], fresh)
     step(f"LSQ stages: {fresh.get('lsq_leads')}")
+    z = zjob.result()
+    pool.shutdown()
+    fresh.update(zfresh)
+    step(f"Zipteams: {fresh.get('zipteams')}")
     return Data(day, rev, agent, call_day, touches, stages, targets, enrolled, lead_status, z, lsq, fresh)
 
 
