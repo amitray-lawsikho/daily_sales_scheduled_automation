@@ -1,29 +1,37 @@
-"""LeadSquared (read-only): the Zipteams call data that Zipteams posts into LSQ as a custom activity.
+"""LeadSquared (read-only). API use follows the proven client of Amit's sales_automation_01 project.
 
-Not mapped yet (5 Nov 2026): the activity code and field names were not reachable from the build
-session. Until config "zipteams.activity_event" is set, every run lists the LSQ activity types whose
-name mentions the keywords in "zipteams.discover" (with their codes and fields) in the run notes,
-so the mapping can be filled in. Once set, activities are read for the report window and counted
-per caller (and per level when "level_field" is set).
+1. Current stage and owner of the check-5 leads (Amit, 5 Nov 2026: follow-ups since moved to Not Interested /
+   May buy later must not be listed):
+     GET LeadManagement.svc/Leads.GetById?id=<Prospect ID>              (Prospect ID from the Team Uzair LSQ sheet)
+     GET LeadManagement.svc/RetrieveLeadByPhoneNumber?phone=<10 digits>   (the rest)
+   Fields ProspectStage, OwnerIdName, FirstName, LastName, ModifiedOn.
+2. Zipteams notes = activity 237; intent in mx_Custom_1 (HIGH / MODERATE / NEUTRAL / LOW / NOT_AVAILABLE).
+     POST ProspectActivity.svc/CustomActivity/RetrieveByActivityEvent
+   The API filters on ModifiedOn, so each day is read with a margin and kept by CreatedOn; a window that does not
+   fit in one page is cut into smaller windows (paging a large result skips rows - found 5 Oct 2026).
 
-LSQ API used (both read-only):
-  GET  /v2/ProspectActivity.svc/ActivityTypes.Get
-  POST /v2/ProspectActivity.svc/CustomActivity/RetrieveByActivityEvent
+Load: LSQ allows 30 requests per 5 s for the whole account, shared with diallers and Zipteams. This module
+sends one request at a time, about 2 a second at most, and the bulk activity read at most once every 5 s.
 """
 from __future__ import annotations
 
 import os
-from datetime import date, datetime, timedelta
+import time
+from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
 import requests
 
 from dsc.settings import CFG
 
-COLS = ["date", "caller", "level", "prospect_id"]
+IST = timezone(timedelta(hours=5, minutes=30))
+STATUS_COLS = ["phone", "prospect_id", "lsq_stage", "lsq_owner", "lsq_name", "how"]
+ZIP_COLS = ["date", "prospect_id", "level", "created_ist"]
 
 
 class LSQ:
+    GAP, BULK_GAP = 0.5, 5.0
+
     def __init__(self):
         host = os.environ.get("LSQ_HOST", "").strip()
         self.ak = os.environ.get("LSQ_ACCESS_KEY", "").strip()
@@ -33,78 +41,153 @@ class LSQ:
         host = host.replace("https://", "").replace("http://", "").split("/")[0]
         self.base = f"https://{host}/v2/"
         self.s = requests.Session()
+        self._last = {"x": 0.0, "bulk": 0.0}
 
-    def _auth(self):
-        return {"accessKey": self.ak, "secretKey": self.sk}
+    def _call(self, method: str, path: str, params: dict | None = None, json=None, bulk=False):
+        """One request at a time, spaced out; retries 429 / 5xx (not LSQ's 500 validation errors)."""
+        q = {"accessKey": self.ak, "secretKey": self.sk, **(params or {})}
+        kind = "bulk" if bulk else "x"
+        r = None
+        for attempt in range(4):
+            wait = self._last[kind] + (self.BULK_GAP if bulk else self.GAP) - time.time()
+            if wait > 0:
+                time.sleep(wait)
+            try:
+                r = self.s.request(method, self.base + path, params=q, json=json, timeout=60)
+            except requests.RequestException as e:
+                self._last[kind] = time.time()
+                if attempt == 3:   # never let the keys reach a log
+                    raise requests.RequestException(str(e).replace(self.ak, "***").replace(self.sk, "***")) from None
+                time.sleep(2 ** attempt)
+                continue
+            self._last[kind] = time.time()
+            if r.status_code == 429 or (r.status_code >= 500 and '"Status":"Error"' not in r.text.replace(" ", "")):
+                time.sleep(float(r.headers.get("Retry-After") or 2 ** (attempt + 1)))
+                continue
+            break
+        if r is None or r.status_code >= 300:
+            code = r.status_code if r is not None else "-"
+            raise requests.RequestException(f"{method} {path} -> HTTP {code}: {(r.text if r is not None else '')[:200]}")
+        return r.json() if r.content else None
 
-    def activity_types(self) -> list[dict]:
-        r = self.s.get(self.base + "ProspectActivity.svc/ActivityTypes.Get", params=self._auth(), timeout=60)
-        r.raise_for_status()
-        return r.json()
+    # leads
+    def lead_by_id(self, pid: str) -> dict | None:
+        d = self._call("GET", "LeadManagement.svc/Leads.GetById", {"id": pid})
+        return d[0] if d else None
 
-    def activities(self, event: int, lo: datetime, hi: datetime) -> list[dict]:
-        out, page = [], 1
-        while True:
-            body = {"Parameter": {"FromDate": lo.strftime("%Y-%m-%d %H:%M:%S"), "ToDate": hi.strftime("%Y-%m-%d %H:%M:%S"),
-                                  "ActivityEvent": int(event), "RemoveEmptyValue": True},
-                    "Paging": {"PageIndex": page, "PageSize": 1000},
-                    "Sorting": {"ColumnName": "CreatedOn", "Direction": "1"}}
-            r = self.s.post(self.base + "ProspectActivity.svc/CustomActivity/RetrieveByActivityEvent",
-                            params=self._auth(), json=body, timeout=120)
-            r.raise_for_status()
-            js = r.json()
-            rows = js.get("List") or js.get("ProspectActivities") or (js if isinstance(js, list) else [])
-            out += rows
-            if len(rows) < 1000 or page >= 200:
-                return out
-            page += 1
+    def leads_by_phone(self, phone: str) -> list[dict]:
+        return self._call("GET", "LeadManagement.svc/RetrieveLeadByPhoneNumber", {"phone": phone}) or []
+
+    # activities
+    def _window(self, event: int, lo: datetime, hi: datetime, page=1000) -> list[dict]:
+        fmt = lambda d: d.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        d = self._call("POST", "ProspectActivity.svc/CustomActivity/RetrieveByActivityEvent", bulk=True,
+                       json={"Parameter": {"FromDate": fmt(lo), "ToDate": fmt(hi), "ActivityEvent": int(event)},
+                             "Paging": {"PageIndex": 1, "PageSize": page}}) or {}
+        rows = d.get("List") or []
+        total = max(int(d.get("RecordCount") or 0), len(rows))
+        secs = int((hi - lo).total_seconds())
+        if total < page or secs < 2:
+            return rows
+        pieces = min(secs, -(-total * 3 // (page * 2)))
+        cuts = [lo + timedelta(seconds=secs * k // pieces) for k in range(pieces)] + [hi]
+        return [x for a, b in zip(cuts, cuts[1:]) for x in self._window(event, a, b, page)]
+
+    def activities_created(self, event: int, lo: datetime, hi: datetime, margin=timedelta(days=1)) -> list[dict]:
+        """Activities CREATED in [lo, hi] (the filter is on ModifiedOn: read to hi + margin, keep by CreatedOn)."""
+        stop = min(hi + margin, datetime.now(timezone.utc))
+        seen, out, day = set(), [], lo
+        while day < stop:
+            end = min(day + timedelta(days=1), stop)
+            for a in self._window(event, day, end):
+                key = a.get("ProspectActivityId") or a.get("Id")
+                t = utc(a.get("CreatedOn"))
+                if key in seen or not t or not (lo <= t <= hi):
+                    continue
+                seen.add(key)
+                out.append(a)
+            day = end
+        return out
 
 
-def _field(row: dict, name: str):
-    if name in row:
-        return row[name]
-    for f in row.get("Fields") or row.get("ActivityFields") or []:
-        if f.get("SchemaName") == name or f.get("Key") == name or f.get("DisplayName") == name:
-            return f.get("Value")
-    return None
+def utc(s) -> datetime | None:
+    """LSQ times are UTC without a zone."""
+    if not s:
+        return None
+    try:
+        t = pd.to_datetime(s).to_pydatetime()
+    except (ValueError, TypeError):
+        return None
+    return t.replace(tzinfo=timezone.utc) if t.tzinfo is None else t.astimezone(timezone.utc)
 
 
-def load_zipteams(lo: date, hi: date, fresh: dict) -> pd.DataFrame:
-    """Zipteams activities per caller-day from LSQ, or an empty frame with a note in fresh['zipteams']."""
+# ------------------------------------------------------------------ 1. current stage of check-5 leads
+def lead_status(cands: pd.DataFrame, fresh: dict, api: LSQ | None = None) -> pd.DataFrame:
+    """cands: phone, prospect_id (may be blank). One row per phone found in LSQ."""
+    from partwise.core import norm_stage
+    if not len(cands):
+        fresh["lsq_leads"] = "no candidate leads to check"
+        return pd.DataFrame(columns=STATUS_COLS)
+    try:
+        api = api or LSQ()
+    except RuntimeError as e:
+        fresh["lsq_leads"] = f"NOT checked in LSQ ({e}); current stage from the Team Uzair 'Follow-up Status' sheet only"
+        return pd.DataFrame(columns=STATUS_COLS)
+    rows, errors = [], 0
+    cands = cands.drop_duplicates("phone").copy()
+    cands["prospect_id"] = cands["prospect_id"].fillna("").astype(str).replace("nan", "")
+
+    def keep(lead, how, phone):
+        rows.append({"phone": phone, "prospect_id": lead.get("ProspectID"),
+                     "lsq_stage": norm_stage(pd.Series([lead.get("ProspectStage") or ""])).iloc[0],
+                     "lsq_owner": str(lead.get("OwnerIdName") or "").strip(),
+                     "lsq_name": " ".join(str(lead.get(k) or "").strip() for k in ("FirstName", "LastName")).strip(),
+                     "how": how})
+
+    t0 = time.time()
+    for r in cands.itertuples():
+        try:
+            lead = api.lead_by_id(r.prospect_id) if r.prospect_id else None
+            if lead:
+                keep(lead, "by Prospect ID", r.phone)
+                continue
+            leads = api.leads_by_phone(r.phone)
+            if leads:   # several leads can share a number: the one changed last decides
+                keep(max(leads, key=lambda x: str(x.get("ModifiedOn") or "")), "by phone", r.phone)
+        except requests.RequestException:
+            errors += 1
+            if errors >= 15:
+                break
+    out = pd.DataFrame(rows, columns=STATUS_COLS)
+    n = len(cands)
+    fresh["lsq_leads"] = (f"{len(out):,} of {n:,} candidate leads read from LSQ in {time.time() - t0:.0f} s "
+                          f"({(out['how'] == 'by Prospect ID').sum():,} by Prospect ID, {(out['how'] == 'by phone').sum():,} by phone)"
+                          + (f"; {n - len(out):,} not found or not read (stage from the Follow-up Status sheet)" if n > len(out) else "")
+                          + (f"; {errors} request errors" if errors else ""))
+    return out
+
+
+# ------------------------------------------------------------------ 2. Zipteams notes
+def load_zipteams(lo: date, hi: date, fresh: dict, api: LSQ | None = None) -> pd.DataFrame:
+    """Zipteams notes (activity 237) created lo..hi: date, prospect_id, level. Matched to follow-ups in analysis."""
     z = CFG.get("zipteams", {})
     try:
-        api = LSQ()
+        api = api or LSQ()
     except RuntimeError as e:
         fresh["zipteams"] = f"not read: {e}"
-        return pd.DataFrame(columns=COLS)
+        return pd.DataFrame(columns=ZIP_COLS)
+    ev = int(z.get("activity_event") or 237)
+    t0 = time.time()
     try:
-        if not z.get("activity_event"):
-            words = [w.lower() for w in z.get("discover", ["zip"])]
-            hits = [t for t in api.activity_types()
-                    if any(w in str(t.get("DisplayName", "")).lower() or w in str(t.get("Name", "")).lower() for w in words)]
-            fresh["zipteams"] = ("not mapped yet. LSQ activity types matching "
-                                 f"{words}: " + ("; ".join(f"{t.get('DisplayName')} (code {t.get('ActivityEvent')})" for t in hits)
-                                                 or "none found") +
-                                 ". Set zipteams.activity_event (and level_field) in config/dsc.json.")
-            return pd.DataFrame(columns=COLS)
-        # LSQ works in UTC
-        rows = api.activities(z["activity_event"], datetime.combine(lo, datetime.min.time()) - timedelta(hours=5, minutes=30),
-                              datetime.combine(hi, datetime.max.time()) - timedelta(hours=5, minutes=30))
+        rows = api.activities_created(ev, datetime.combine(lo, datetime.min.time(), IST),
+                                      datetime.combine(hi, datetime.max.time(), IST))
     except requests.RequestException as e:
-        fresh["zipteams"] = f"LSQ request failed: {str(e)[:200]}"
-        return pd.DataFrame(columns=COLS)
-    if not rows:
-        fresh["zipteams"] = "mapped; no activities in the window"
-        return pd.DataFrame(columns=COLS)
-    if z.get("sample_fields_in_notes", True):
-        fresh["zipteams_fields"] = sorted({k for r in rows[:20] for k in r.keys()})[:60]
-    owner = z.get("owner_field", "CreatedByName")
-    level = z.get("level_field")
-    df = pd.DataFrame({
-        "date": pd.to_datetime([r.get("CreatedOn") for r in rows], errors="coerce", utc=True)
-                  .tz_convert("Asia/Kolkata").strftime("%Y-%m-%d"),
-        "caller": [str(_field(r, owner) or "").strip() for r in rows],
-        "level": [str(_field(r, level) or "").strip().title() if level else "" for r in rows],
-        "prospect_id": [r.get("RelatedProspectId") or r.get("ProspectId") for r in rows]})
-    fresh["zipteams"] = f"{len(df):,} activities read from LSQ (event {z['activity_event']})"
-    return df
+        fresh["zipteams"] = f"LSQ read failed: {str(e)[:200]}"
+        return pd.DataFrame(columns=ZIP_COLS)
+    field = z.get("level_field") or "mx_Custom_1"
+    df = pd.DataFrame({"created_ist": [utc(r.get("CreatedOn")).astimezone(IST).strftime("%Y-%m-%d %H:%M:%S") for r in rows],
+                       "prospect_id": [r.get("RelatedProspectId") or "" for r in rows],
+                       "level": [str(r.get(field) or "NOT_AVAILABLE").strip().upper() for r in rows]}, columns=["created_ist", "prospect_id", "level"])
+    df["date"] = df["created_ist"].str[:10]
+    fresh["zipteams"] = f"{len(df):,} Zipteams notes (activity {ev}) read from LSQ for {lo}..{hi} in {time.time() - t0:.0f} s"
+    return df[ZIP_COLS]

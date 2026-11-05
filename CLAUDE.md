@@ -57,15 +57,19 @@ uploaded to Drive › Team Uzair Performance (Amit) › Daily Sales Check. Data 
 - Checks: 1 data fresh/complete, 2 team revenue on the previous working day vs daily run-rate (target / working
   days), 3 early warning off track 2 complete weeks running (caller below 75% of team median; team weekly revenue
   below run-rate), 4 below 70% of pro-rated MTD target after the 15th, 5 high-intent leads (latest stage Roadmap
-  Done / Follow Up For Closure in 14 days, still open in 'Follow-up Status', not in BASE DATA) not dialled by anyone
-  for 24 h, with callers and numbers, 6 top / bottom 3 by achievement of pro-rated target. Check 7 (bootcamp) parked.
+  Done / Follow Up For Closure in 14 days, not in BASE DATA, and STILL in one of those stages in LSQ - read live per
+  lead with Leads.GetById / RetrieveLeadByPhoneNumber, because the Uzair 'Follow-up Status' sheet goes stale; Amit
+  5 Nov 2026) not dialled by anyone for 24 h, with callers and numbers; leads since moved (Not Interested, May buy
+  later, ...) go to the "Dropped - stage changed" sheet, 6 top / bottom 3 by achievement of pro-rated target. Check 7 (bootcamp) parked.
 - Trends: monthly (4 months, month's own team list), weekly (6 Mon-Sun weeks), daily; follow-ups per caller with a
   High / Medium / Low level vs the team median; the "why" = first funnel step below 75% of the team's top 3.
 - Sources: Revenue Analytics `rev_daily`; Calling Analytics `agent_day`, `calls`, `team_map`, `stage_changes`;
   Team Uzair LSQ live sheet + monthly copies (stages, 'Follow-up Status'); MonthwiseTeamList in
   `team_members_data_amit` (targets; Active rows with a Target); BASE DATA (enrolled phones); LSQ for Zipteams.
-- Zipteams posts to LSQ as a custom activity. Not mapped yet: set `zipteams.activity_event` and `level_field` in
-  `config/dsc.json` from the activity types each run lists in its data check.
+- Zipteams: "Zipteams Notes" LSQ activity 237, intent in `mx_Custom_1` (HIGH / MODERATE / NEUTRAL / LOW), read with
+  the ModifiedOn-margin + window-splitting method of Amit's sales_automation_01 project. Each follow-up takes its
+  lead's note within 2 days (Prospect ID match) -> per caller "FU Zip H/M/N/L" and weekly High+Moderate %.
+  LSQ load: one request at a time, <= 2/s, bulk activity read <= 1 per 5 s (account limit 30 per 5 s, shared).
 - Every threshold is in `config/dsc.json`; ask Amit before changing one. Read-only on every source; the only write
   is the dashboards' own refresh call. `output/` holds phone numbers and is git-ignored.
 - Test: `python -m dsc run --offline <folder saved with --save>`; `python -m dsc.schedule --today <date>`.

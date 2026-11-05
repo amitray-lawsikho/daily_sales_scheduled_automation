@@ -431,24 +431,26 @@ def team_pages(res: Result, tm: str, story):
     story.append(Table([[chart_daily(res, tm), chart_pacing(res, tm)]], colWidths=[CW / 2] * 2))
     wt = res.weekly_team[res.weekly_team["team"] == tm]
     rows = [["Week", "Revenue", "Run-rate", "vs RR", "Enrol.", "Calls/day", "Answered", "3-min/day", "15-min+/day",
-             "Talk h/day", "Follow-ups", "FU/day"]]
+             "Talk h/day", "Follow-ups", "FU/day", "FU Zip High+Mod"]]
     for r in wt.itertuples():
         vr = r.revenue / r.run_rate * 100 if r.run_rate else np.nan
         rows.append([f"{r.week:%d %b}" + ("" if r.complete else " (so far)"), rs(r.revenue), rs(r.run_rate),
                      P(f"<font color='{pace_color(vr)}'><b>{pct(vr)}</b></font>"), r.enrolments, f1(r.calls_per_day, 0),
                      pct(r.connect_pct), f1(r.conv3_per_day), f1(r.deep_per_day, 2), f1(r.talk_hrs_per_day),
-                     r.followups, f1(r.followups_per_day)])
-    story.append(P("Weekly trend (Mon-Sun; per caller per active day)", "h2"))
-    story.append(table(rows, [1.0 * inch] + [(CW - 1.0 * inch) / 11] * 11))
+                     r.followups, f1(r.followups_per_day),
+                     "-" if not r.fu_zip_rated else f"{pct(r.fu_himod_pct)} of {r.fu_zip_rated}"])
+    story.append(P("Weekly trend (Mon-Sun; per caller per active day; FU Zip High+Mod = follow-ups whose Zipteams "
+                   "intent was High or Moderate, of those with a rated Zipteams note)", "h2"))
+    story.append(table(rows, [1.0 * inch] + [(CW - 1.0 * inch) / 12] * 12))
 
     # callers
     story.append(PageBreak())
     story.append(Title(f"{tm} - callers: calling, follow-ups and revenue (MTD)"))
     hi = res.leads.groupby("caller").size() if res.leads is not None and len(res.leads) else pd.Series(dtype=int)
-    has_zip = "zip_calls" in cal.columns
+    has_zip = "zip_rated" in cal.columns and cal["zip_rated"].sum() > 0
     hdr = ["Caller", "Target", "MTD", "Achv", res.prev_wd.strftime("%d %b"), "Enr", "Days", "Calls /day", "Ans %", "3m",
            "15-20", "20+", "Talk h", "Avg /ans", "Long- est", "Break h/day", "Late", "FU", "FU /day", "FU level", "FU→ Enr",
-           "HI >24h"] + (["Zip"] if has_zip else []) + ["Why (first gap vs the team's top 3)"]
+           "HI >24h"] + (["FU Zip H/M/N/L"] if has_zip else []) + ["Why (first gap vs the team's top 3)"]
     rows = [hdr]
     for r in cal.itertuples():
         name = f"<b>{r.caller}</b>" + (" <font color='#6B7280'>(TL)</font>" if r.lead else "")
@@ -458,8 +460,9 @@ def team_pages(res: Result, tm: str, story):
                      pct(r.connect_pct), r.calls_3m, r.calls_15_20, r.calls_20p, f1(r.talk_hrs, 1), f1(r.avg_talk_min, 1),
                      f1(r.longest_min, 0), f1(r.break_hrs_per_day, 1), r.late_days, r.followups, f1(r.followups_per_day),
                      P(f"<font color='{lvl_c}'><b>{r.followup_level}</b></font>"), pct(r.fu_conv_pct), int(hi.get(r.caller, 0))]
-                    + ([r.zip_calls] if has_zip else []) + [P(r.primary if not r.lead else "")])
-    fixed = [1.15, .45, .45, .38, .4, .25, .28, .4, .33, .28, .3, .28, .37, .4, .42, .42, .28, .28, .3, .45, .4, .38] + ([.3] if has_zip else [])
+                    + ([P(f"<font color='{GREEN}'>{r.zip_high}</font>/{r.zip_moderate}/{r.zip_neutral}/"
+                           f"<font color='{RED}'>{r.zip_low}</font>")] if has_zip else []) + [P(r.primary if not r.lead else "")])
+    fixed = [1.15, .45, .45, .38, .4, .25, .28, .4, .33, .28, .3, .28, .37, .4, .42, .42, .28, .28, .3, .45, .4, .38] + ([.62] if has_zip else [])
     widths = [w * inch for w in fixed]
     widths.append(CW - sum(widths))
     hdr_cells = [P(f"<font color='white'><b>{h}</b></font>") for h in rows[0]]
@@ -469,7 +472,9 @@ def team_pages(res: Result, tm: str, story):
                    "durations; Avg/ans and Longest in minutes. Late = days flagged Late Check-In. FU = leads moved to Follow Up For "
                    "Closure (LSQ). FU level vs team median per active day: High >= "
                    f"{CFG['followup_level']['high_pct']}%, Low < {CFG['followup_level']['low_pct']}%. FU→Enr = follow-up leads "
-                   "this month that enrolled (BASE DATA, phone match). HI >24h = check 5 leads held (numbers in the leads Excel).", "small"))
+                   "this month that enrolled (BASE DATA, phone match). HI >24h = check 5 leads held (numbers in the leads Excel). "
+                   "FU Zip H/M/N/L = this month's follow-ups by the Zipteams intent of the lead's call (High / Moderate / Neutral / "
+                   "Low; follow-ups without a rated note not counted).", "small"))
 
     # why
     story.append(PageBreak())
@@ -501,6 +506,11 @@ def team_pages(res: Result, tm: str, story):
                        f"{CFG['leads']['untouched_hours']} h before {ref:%d %b %H:%M} IST. <b>Phone numbers, lead names and "
                        f"last dial times are in the Excel 'High-intent leads not dialled {res.day.isoformat()}'</b>, one sheet "
                        "per team.", "small"))
+    Dr = res.leads_dropped[res.leads_dropped["team"] == tm] if getattr(res, "leads_dropped", None) is not None else pd.DataFrame()
+    if len(Dr):
+        mv = Dr["current_stage"].value_counts()
+        story.append(P(f"Checked live in LSQ: <b>{len(Dr)}</b> more follow-up / roadmap lead(s) of this team are no longer open and "
+                       "are left out: " + ", ".join(f"{k or 'blank'} {v}" for k, v in mv.items()) + ".", "small"))
     if not len(L):
         story.append(P("<font color='#3E8E5A'><b>None</b></font> - every high-intent lead was dialled within the window.", "p"))
         return
@@ -568,7 +578,13 @@ def definitions(res: Result, story):
         ("Follow-ups", "Leads moved to 'Follow Up For Closure' in LSQ (stage report + Team Uzair LSQ live sheet and its monthly "
                        "copies), one per lead per caller per day. Follow-up level compares a caller's follow-ups per active day with "
                        "the team median. FU→Enr = this month's follow-up leads whose phone is in BASE DATA 'New enrollment'."),
-        ("Zipteams", "Zipteams posts its call analysis to LSQ. " + str(res.__dict__.get("zip_note") or "Mapping status is in the data check.")),
+        ("Zipteams", "Zipteams writes a 'Zipteams Notes' activity (237) on the lead in LSQ after each call, with the lead's intent "
+                     "(High / Moderate / Neutral / Low). Each follow-up takes the intent of its lead's latest note within "
+                     f"{CFG['zipteams']['match_days']} days of the follow-up (matched by Prospect ID). It shows whether a caller's "
+                     "follow-ups are warm leads or weak ones. Zipteams sees one call only: an input, never the answer."),
+        ("Current stage", "Before a lead is listed in check 5 its stage and owner are read live from LSQ (by Prospect ID, else "
+                          "phone). Leads now in Not Interested, May buy later or any other stage are dropped and listed on the "
+                          "'Dropped - stage changed' sheet of the leads Excel."),
         ("Check 5", f"High-intent = latest stage in {CFG['leads']['lookback_days']} days is {' / '.join(CFG['leads']['stages'])}, still "
                     "open in the 'Follow-up Status' sheet (not Actually Enrolled / Not Interested / ...), not in BASE DATA as a new "
                     "enrolment. Not dialled = no call to that number by anyone for more than "

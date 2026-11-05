@@ -78,9 +78,13 @@ def write_leads_xlsx(res: A.Result, path: str) -> None:
             rm = int(x["stage"].str.startswith("Roadmap").sum())
             ws.append([tm, caller, len(x), rm, len(x) - rm, int(x["last_call"].isna().sum()),
                        None if x["hours"].isna().all() else round(float(x["hours"].max()))])
-    cols = ["Caller", "Phone", "Lead name", "Stage", "Stage set on", "Last dial (IST)", "Hours since last dial",
-            "Current LSQ stage", "Called today? (TL to fill)"]
+    cols = ["Caller", "Phone", "Lead name", "Stage set", "Stage set on", "Last dial (IST)", "Hours since last dial",
+            "Current LSQ stage", "Stage checked in", "Zipteams intent (latest)", "Called today? (TL to fill)"]
     sheets = [(ws, hdr_row)]
+    # leads that were follow-up / roadmap but are no longer open in LSQ (Not Interested, May buy later, ...)
+    Dr = getattr(res, "leads_dropped", pd.DataFrame())
+    dcols = ["Team", "Caller", "Phone", "Lead name", "Stage set", "Stage set on", "Stage now in LSQ", "Last dial (IST)",
+             "Zipteams intent (latest)"]
     for tm in TEAMS:
         t = wb.create_sheet(tm.replace("Corporate law - ", "CL - ")[:31])
         t.append(cols)
@@ -88,12 +92,23 @@ def write_leads_xlsx(res: A.Result, path: str) -> None:
         for r in g.itertuples():
             t.append([r.caller, str(r.phone), r.name or "", r.stage, pd.Timestamp(r.stage_date).strftime("%d %b %Y"),
                       "no dial in the window" if pd.isna(r.last_call) else pd.Timestamp(r.last_call).strftime("%d %b %Y %H:%M"),
-                      None if pd.isna(r.hours) else round(float(r.hours)), r.current_stage or "", ""])
+                      None if pd.isna(r.hours) else round(float(r.hours)), r.current_stage or "", r.stage_source,
+                      r.zip_intent or "", ""])
         for c in t["B"][1:]:
             c.number_format = "@"          # keep the number as text: no 9.19E+09, no lost digits
         t.auto_filter.ref = f"A1:{get_column_letter(len(cols))}{max(t.max_row, 1)}"
         t.freeze_panes = "A2"
         sheets.append((t, 1))
+    t = wb.create_sheet("Dropped - stage changed")
+    t.append(dcols)
+    for r in Dr.itertuples():
+        t.append([r.team, r.caller, str(r.phone), r.name or "", r.stage, pd.Timestamp(r.stage_date).strftime("%d %b %Y"),
+                  r.current_stage or "", "no dial in the window" if pd.isna(r.last_call) else pd.Timestamp(r.last_call).strftime("%d %b %Y %H:%M"),
+                  r.zip_intent or ""])
+    for c in t["C"][1:]:
+        c.number_format = "@"
+    t.freeze_panes = "A2"
+    sheets.append((t, 1))
     for sh, hr in sheets:
         for c in sh[hr]:
             c.fill, c.font = head_fill, head_font

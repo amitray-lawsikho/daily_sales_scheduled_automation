@@ -53,7 +53,7 @@ def synthetic() -> Data:
              "rev_last_date": D.isoformat(), "call_last_date": D.isoformat(), "unmapped": []}
     s = lambda rows: pd.DataFrame(rows).astype(str)
     return Data(D, s(rev), s(agent), s(cday), touches.astype(str), s(stages), targets, enrolled,
-                pd.DataFrame(columns=["phone", "current_stage", "current_owner"]), pd.DataFrame(), fresh)
+                pd.DataFrame(columns=["phone", "current_stage", "current_owner"]), pd.DataFrame(), fresh=fresh)
 
 
 class Calendar(unittest.TestCase):
@@ -136,3 +136,60 @@ class Checks(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FakeLSQ:
+    """Stands in for dsc.lsq.LSQ: two leads, one still Follow Up, one moved to Not Interested."""
+    def __init__(self):
+        self.calls = []
+
+    def lead_by_id(self, pid):
+        self.calls.append(("id", pid))
+        return {"ProspectID": pid, "ProspectStage": "Not Interested", "OwnerIdName": "Good One",
+                "FirstName": "Moved", "LastName": "Lead"} if pid == "P-2" else None
+
+    def leads_by_phone(self, phone):
+        self.calls.append(("phone", phone))
+        return [{"ProspectID": "P-1", "ProspectStage": "Roadmap\xa0Done", "OwnerIdName": "Good Two", "ModifiedOn": "2026-11-03 10:00:00"},
+                {"ProspectID": "P-1-old", "ProspectStage": "Not Interested", "OwnerIdName": "Good One", "ModifiedOn": "2026-10-01 10:00:00"}] \
+            if phone == "9000000001" else []
+
+
+class LiveStage(unittest.TestCase):
+    def test_lsq_stage_decides_and_drops_closed_leads(self):
+        from dsc.lsq import lead_status
+        data = synthetic()
+        data.stages = pd.concat([data.stages, pd.DataFrame([{"date": "2026-11-02", "phone": "9000000004", "stage": "followup",
+                                                              "owner": "Good One", "src": "test", "prospect_id": "P-2"}]).astype(str)])
+        data.touches = pd.concat([data.touches, pd.DataFrame([{"phone": "9000000004", "last_call": "2026-11-02 09:00:00"}])])
+        fresh = {}
+        cands = A.lead_candidates(D, data.stages, data.touches, data.enrolled)
+        cands = cands[cands["phone"].str.startswith("900000000")]
+        api = FakeLSQ()
+        data.lsq_leads = lead_status(cands[["phone", "prospect_id"]], fresh, api=api)
+        self.assertIn(("id", "P-2"), api.calls)                            # Prospect ID first
+        self.assertIn(("phone", "9000000001"), api.calls)                  # phone for the rest
+        res = A.run(data)
+        L = res.leads.set_index("phone")
+        self.assertIn("9000000001", L.index)
+        self.assertEqual(L.loc["9000000001", "current_stage"], "Roadmap Done")   # latest-modified lead, nbsp folded
+        self.assertEqual(L.loc["9000000001", "caller"], "Good Two")              # LSQ owner now
+        self.assertNotIn("9000000004", L.index)
+        dr = res.leads_dropped.set_index("phone")
+        self.assertEqual(dr.loc["9000000004", "current_stage"], "Not Interested")
+        self.assertIn("2 of 2", fresh["lsq_leads"])
+
+    def test_zipteams_intent_on_followups(self):
+        data = synthetic()
+        data.stages = pd.concat([data.stages, pd.DataFrame([
+            {"date": "2026-11-03", "phone": "9100000001", "stage": "followup", "owner": "Good One", "src": "t", "prospect_id": "Z-1"},
+            {"date": "2026-11-03", "phone": "9100000002", "stage": "followup", "owner": "Good One", "src": "t", "prospect_id": "Z-2"},
+            {"date": "2026-11-03", "phone": "9100000003", "stage": "followup", "owner": "Slow Dialler", "src": "t", "prospect_id": "Z-3"}]).astype(str)])
+        data.zip = pd.DataFrame([
+            {"date": "2026-11-03", "prospect_id": "Z-1", "level": "HIGH", "created_ist": "2026-11-03 12:00:00"},
+            {"date": "2026-11-03", "prospect_id": "Z-2", "level": "LOW", "created_ist": "2026-11-03 12:00:00"},
+            {"date": "2026-10-20", "prospect_id": "Z-3", "level": "HIGH", "created_ist": "2026-10-20 12:00:00"}])  # too old
+        c = A.run(data).callers.set_index("caller")
+        self.assertEqual((c.loc["Good One", "zip_high"], c.loc["Good One", "zip_low"]), (1, 1))
+        self.assertEqual(c.loc["Good One", "zip_himod_pct"], 50)
+        self.assertEqual(c.loc["Slow Dialler", "zip_rated"], 0)

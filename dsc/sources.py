@@ -30,11 +30,12 @@ FILES = {"rev": ["txn_date", "team", "caller", "caller_status", "revenue", "enro
                    "prod_sec", "break_sec", "break_count", "unique_leads", "issues"],
          "call_day": ["call_date", "caller", "talk_sec", "longest_sec"],
          "touches": ["phone", "last_call"],
-         "stages": ["date", "phone", "stage", "owner", "src", "name"],
+         "stages": ["date", "phone", "stage", "owner", "src", "name", "prospect_id"],
          "targets": ["month", "caller", "team", "role", "status", "target"],
          "enrolled": ["phone"],
          "lead_status": ["phone", "current_stage", "current_owner"],
-         "zip": ["date", "caller", "level", "prospect_id"]}
+         "zip": ["date", "prospect_id", "level", "created_ist"],
+         "lsq_leads": ["phone", "prospect_id", "lsq_stage", "lsq_owner", "lsq_name", "how"]}
 
 
 @dataclass
@@ -49,6 +50,7 @@ class Data:
     enrolled: pd.DataFrame
     lead_status: pd.DataFrame = None            # current LSQ stage/owner of follow-up leads (Uzair 'Follow-up Status')
     zip: pd.DataFrame = None                    # Zipteams activities from LSQ (empty until mapped)
+    lsq_leads: pd.DataFrame = None              # current LSQ stage/owner of the check-5 candidate leads
     fresh: dict = field(default_factory=dict)  # refresh times, latest dates, unmapped names, source notes
 
 
@@ -285,7 +287,8 @@ def uzair_frame(d: pd.DataFrame, stage: str, mk: str | None = None) -> pd.DataFr
     dt = to_dt(d["Date"]) if "Date" in d.columns else to_dt(d.get("Timestamp"))
     out = pd.DataFrame({"date": dt.dt.strftime("%Y-%m-%d"), "phone": norm_phone(d["Phone Number"]),
                         "stage": STAGE_KEY[stage], "owner": d["Owner"].astype(str).str.strip(), "src": "Team Uzair LSQ sheet",
-                        "name": d["Name"].fillna("").astype(str).str.strip() if "Name" in d.columns else ""})
+                        "name": d["Name"].fillna("").astype(str).str.strip() if "Name" in d.columns else "",
+                        "prospect_id": d["Prospect ID"].fillna("").astype(str).str.strip() if "Prospect ID" in d.columns else ""})
     out = out[out["date"].notna()]
     return out if mk is None else out[out["date"].str[:7] == mk]
 
@@ -303,9 +306,12 @@ def load_live(day: date) -> Data:
     targets, uz, enrolled, lead_status = load_google(day, w, fresh)
     stages = pd.concat([st, uz], ignore_index=True)
     stages = stages[stages["phone"].str.len() == 10].drop_duplicates(["date", "phone", "stage", "owner"])
-    from dsc.lsq import load_zipteams
-    z = load_zipteams(w["weeks_from"], day, fresh)
-    return Data(day, rev, agent, call_day, touches, stages, targets, enrolled, lead_status, z, fresh)
+    from dsc.analysis import lead_candidates
+    from dsc.lsq import lead_status as lsq_lead_status, load_zipteams
+    z = load_zipteams(day - timedelta(days=CFG["zipteams"]["days"]), day, fresh)
+    cands = lead_candidates(day, stages, touches, enrolled)
+    lsq = lsq_lead_status(cands[["phone", "prospect_id"]], fresh)
+    return Data(day, rev, agent, call_day, touches, stages, targets, enrolled, lead_status, z, lsq, fresh)
 
 
 # ------------------------------------------------------------------ files

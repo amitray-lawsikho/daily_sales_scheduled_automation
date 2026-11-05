@@ -179,6 +179,7 @@ def run(data) -> Result:
     team_of = dict(zip(roster["caller"], roster["team"]))
     agent["team_now"] = agent["caller"].map(team_of).fillna(agent["team"])
 
+    res.fu_zip = followup_zip(stages, data.zip)
     quality(res, data, rev, agent, roster)
     mtd_rev = rev[(rev["month"] == month) & (rev["d"] <= D)]
     teams_frame(res, mtd_rev, tt, P)
@@ -230,6 +231,8 @@ def quality(res: Result, data, rev, agent, roster):
         q.append((f"On the {res.month} team list but no calls or revenue this month: {', '.join(miss)}", False))
     if f.get("uzair_books"):
         q.append(("Team Uzair stage sheets read: " + "; ".join(f["uzair_books"]), True))
+    if f.get("lsq_leads"):
+        q.append(("High-intent leads, current stage: " + f["lsq_leads"], not f["lsq_leads"].startswith("NOT")))
     if f.get("zipteams"):
         q.append(("Zipteams (via LSQ): " + f["zipteams"], "not" not in f["zipteams"]))
 
@@ -329,61 +332,124 @@ def callers_frame(res: Result, data, rev, agent, cday, stages, roster, P):
             else:
                 lvl = "Medium"
             df.at[i, "followup_level"] = lvl
-    z = data.zip if data.zip is not None else pd.DataFrame()
-    if len(z):
-        z = z[(z["date"] >= m0.isoformat()) & (z["date"] <= D.isoformat())]
-        df["zip_calls"] = df["caller"].map(z.groupby("caller").size()).fillna(0).astype(int)
-        if z["level"].astype(str).str.len().gt(0).any():
-            lv = z.groupby(["caller", "level"]).size().unstack(fill_value=0)
-            for col in ("High", "Medium", "Low"):
-                df[f"zip_{col.lower()}"] = df["caller"].map(lv[col] if col in lv else pd.Series(dtype=int)).fillna(0).astype(int)
+    # Zipteams intent of each follow-up (MTD) per caller
+    fz = res.fu_zip[(res.fu_zip["d"] >= m0) & (res.fu_zip["d"] <= D)] if len(res.fu_zip) else res.fu_zip
+    for lvl in ZIP_LEVELS:
+        col = "zip_" + lvl.lower()
+        df[col] = df["caller"].map(fz[fz["zip"] == lvl].groupby("owner").size()).fillna(0).astype(int) if len(fz) else 0
+    rated = df[["zip_high", "zip_moderate", "zip_neutral", "zip_low"]].sum(axis=1)
+    df["zip_rated"] = rated
+    df["zip_himod_pct"] = _div(df["zip_high"] + df["zip_moderate"], rated) * 100
     res.callers = df.sort_values(["team", "lead", "mtd"], ascending=[True, True, False]).reset_index(drop=True)
 
 
 # ------------------------------------------------------------------ check 5
-def leads_frame(res: Result, data, stages, roster):
+ZIP_LEVELS = ["HIGH", "MODERATE", "NEUTRAL", "LOW"]
+
+
+def followup_zip(stages: pd.DataFrame, z) -> pd.DataFrame:
+    """Each follow-up (stage row) with the Zipteams intent of its lead's latest note within match_days of the
+    follow-up date, matched by Prospect ID. zip = HIGH / MODERATE / NEUTRAL / LOW, or "" (no rated note)."""
+    fu = stages[stages["stage"] == "followup"].copy()
+    fu["prospect_id"] = (fu["prospect_id"] if "prospect_id" in fu else pd.Series("", index=fu.index)).fillna("").astype(str)
+    fu["zip"] = ""
+    if z is None or not len(z) or not len(fu):
+        return fu
+    md = CFG["zipteams"].get("match_days", 2)
+    z = z[z["level"].isin(ZIP_LEVELS) & (z["prospect_id"].astype(str).str.len() > 0)].copy()
+    z["zd"] = pd.to_datetime(z["date"]).dt.date
+    m = fu.reset_index().merge(z[["prospect_id", "zd", "level", "created_ist"]], on="prospect_id", how="inner")
+    m = m[(m["zd"] >= m["d"] - timedelta(days=md)) & (m["zd"] <= m["d"] + timedelta(days=md))]
+    m = m.sort_values("created_ist").drop_duplicates("index", keep="last").set_index("index")
+    fu.loc[m.index, "zip"] = m["level"]
+    return fu
+
+
+LEAD_KEYS = {"Roadmap Done": "roadmap", "Follow Up For Closure": "followup", "Discovery Call Done": "discovery"}
+
+
+def lead_candidates(day: date, stages: pd.DataFrame, touches: pd.DataFrame, enrolled: pd.DataFrame) -> pd.DataFrame:
+    """Check-5 candidates before the current-stage check: latest stage in the look-back is high-intent, not
+    enrolled, and no call to the number for more than untouched_hours before the latest call in the data.
+    Used by the loader (which leads to look up in LSQ) and by the report."""
     L = CFG["leads"]
-    keys = {"Roadmap Done": "roadmap", "Follow Up For Closure": "followup", "Discovery Call Done": "discovery"}
-    hi_keys = {keys[s] for s in L["stages"] if s in keys}
-    lo = res.day - timedelta(days=L["lookback_days"])
-    s = stages[(stages["d"] >= lo) & (stages["d"] <= res.day)].copy()
-    rank = {"discovery": 0, "roadmap": 1, "followup": 2}
-    s["r"] = s["stage"].map(rank)
-    names = (s["name"] if "name" in s else pd.Series("", index=s.index)).fillna("").astype(str)
-    name_of = s.assign(name=names)[names.str.len() > 0].sort_values("d").drop_duplicates("phone", keep="last").set_index("phone")["name"]
+    hi_keys = {LEAD_KEYS[x] for x in L["stages"] if x in LEAD_KEYS}
+    s = stages.copy()
+    if "d" not in s:
+        s["d"] = pd.to_datetime(s["date"], errors="coerce").dt.date
+    s = s.dropna(subset=["d"])
+    s = s[(s["d"] >= day - timedelta(days=L["lookback_days"])) & (s["d"] <= day)].copy()
+    for c in ("name", "prospect_id"):
+        s[c] = (s[c] if c in s else pd.Series("", index=s.index)).fillna("").astype(str).replace("nan", "")
+    pick = lambda c: s[s[c].str.len() > 0].sort_values("d").drop_duplicates("phone", keep="last").set_index("phone")[c]
+    name_of, id_of = pick("name"), pick("prospect_id")
+    s["r"] = s["stage"].map({"discovery": 0, "roadmap": 1, "followup": 2})
     s = s.sort_values(["phone", "d", "r"]).drop_duplicates("phone", keep="last")
     s = s[s["stage"].isin(hi_keys)]
     s["name"] = s["phone"].map(name_of).fillna("")
-    cols = ["team", "caller", "phone", "name", "stage", "stage_date", "last_call", "hours", "current_stage"]
-    if not len(s):
-        res.leads = pd.DataFrame(columns=cols)
-        return
-    ls = data.lead_status if data.lead_status is not None else pd.DataFrame(columns=["phone", "current_stage", "current_owner"])
-    ls = ls.drop_duplicates("phone", keep="last").set_index("phone")
-    s["current_stage"] = s["phone"].map(ls["current_stage"]) if len(ls) else ""
-    s["current_stage"] = s["current_stage"].fillna("")
-    owner_now = s["phone"].map(ls["current_owner"]) if len(ls) else pd.Series(index=s.index, dtype=object)
-    s["caller"] = owner_now.where(owner_now.notna() & (owner_now.astype(str).str.len() > 0), s["owner"])
-    open_stage = s["current_stage"].eq("") | s["current_stage"].isin(L["stages"])
-    enrolled = set(data.enrolled["phone"]) if len(data.enrolled) else set()
-    s = s[open_stage & ~s["phone"].isin(enrolled)]
-    team_of = dict(zip(roster["caller"], roster["team"]))
-    s["team"] = s["caller"].map(team_of)
-    s = s[s["team"].isin(TEAMS)]
-    t = data.touches.copy()
+    s["prospect_id"] = s["phone"].map(id_of).fillna("")
+    enr = set(enrolled["phone"]) if len(enrolled) else set()
+    s = s[~s["phone"].isin(enr)]
+    t = touches.copy()
     t["last_call"] = pd.to_datetime(t["last_call"], errors="coerce")
     ref = t["last_call"].max() if len(t) else pd.NaT
     if pd.isna(ref):
-        ref = pd.Timestamp(datetime.combine(res.day + timedelta(days=1), datetime.min.time()) + timedelta(hours=11, minutes=30))
-    res.lead_ref = ref
+        ref = pd.Timestamp(datetime.combine(day + timedelta(days=1), datetime.min.time()) + timedelta(hours=11, minutes=30))
     s["last_call"] = s["phone"].map(t.set_index("phone")["last_call"]) if len(t) else pd.NaT
     s["hours"] = (ref - s["last_call"]).dt.total_seconds() / 3600
+    s = s[(s["d"] < ref.date()) & (s["last_call"].isna() | (s["hours"] > L["untouched_hours"]))]
+    s.attrs["ref"] = ref
+    return s
+
+
+def leads_frame(res: Result, data, stages, roster):
+    L = CFG["leads"]
+    cols = ["team", "caller", "phone", "name", "stage", "stage_date", "last_call", "hours", "current_stage", "stage_source",
+            "zip_intent"]
+    s = lead_candidates(res.day, stages, data.touches, data.enrolled)
+    res.lead_ref = s.attrs.get("ref")
+    res.leads_dropped = pd.DataFrame(columns=cols)
+    if not len(s):
+        res.leads = pd.DataFrame(columns=cols)
+        return
+    # current stage + owner: LSQ API first (source of truth), else the Team Uzair 'Follow-up Status' sheet
+    s["current_stage"], s["current_owner"], s["stage_source"] = "", "", "not checked"
+    ls = data.lead_status if data.lead_status is not None else pd.DataFrame(columns=["phone", "current_stage", "current_owner"])
+    if len(ls):
+        ls = ls.drop_duplicates("phone", keep="last").set_index("phone")
+        hit = s["phone"].isin(ls.index)
+        s.loc[hit, "current_stage"] = s.loc[hit, "phone"].map(ls["current_stage"]).fillna("")
+        s.loc[hit, "current_owner"] = s.loc[hit, "phone"].map(ls["current_owner"]).fillna("")
+        s.loc[hit, "stage_source"] = "Follow-up Status sheet"
+    lq = data.lsq_leads if getattr(data, "lsq_leads", None) is not None else pd.DataFrame()
+    if len(lq):
+        lq = lq.drop_duplicates("phone", keep="last").set_index("phone")
+        hit = s["phone"].isin(lq.index)
+        s.loc[hit, "current_stage"] = s.loc[hit, "phone"].map(lq["lsq_stage"]).fillna("")
+        own = s.loc[hit, "phone"].map(lq["lsq_owner"]).fillna("")
+        s.loc[hit, "current_owner"] = own.where(own.str.len() > 0, s.loc[hit, "current_owner"])
+        nm = s.loc[hit, "phone"].map(lq["lsq_name"]).fillna("")
+        s.loc[hit, "name"] = nm.where(nm.str.len() > 0, s.loc[hit, "name"])
+        s.loc[hit, "stage_source"] = "LSQ"
+        pid = s.loc[hit, "phone"].map(lq["prospect_id"]).fillna("").astype(str)
+        s.loc[hit, "prospect_id"] = pid.where(pid.str.len() > 0, s.loc[hit, "prospect_id"])
+    s["current_stage"] = s["current_stage"].fillna("").astype(str)
+    z = data.zip if data.zip is not None else pd.DataFrame()
+    if len(z):
+        zl = z[z["level"].isin(ZIP_LEVELS)].sort_values("created_ist").drop_duplicates("prospect_id", keep="last")
+        s["zip_intent"] = s["prospect_id"].map(zl.set_index("prospect_id")["level"]).fillna("").str.title()
+    else:
+        s["zip_intent"] = ""
+    s["caller"] = s["current_owner"].where(s["current_owner"].astype(str).str.len() > 0, s["owner"])
+    team_of = dict(zip(roster["caller"], roster["team"]))
+    s["team"] = s["caller"].map(team_of)
     s["stage_date"] = s["d"]
-    gap = L["untouched_hours"]
-    s = s[(s["d"] < ref.date()) & (s["last_call"].isna() | (s["hours"] > gap))]
-    s["stage"] = s["stage"].map({v: k for k, v in keys.items()})
-    s = s.sort_values(["team", "caller", "hours"], ascending=[True, True, False], na_position="first")
-    res.leads = s[cols].reset_index(drop=True)
+    s["stage"] = s["stage"].map({v: k for k, v in LEAD_KEYS.items()})
+    s = s[s["team"].isin(TEAMS)]
+    open_ = s["current_stage"].eq("") | s["current_stage"].isin(L["stages"])
+    order = dict(by=["team", "caller", "hours"], ascending=[True, True, False], na_position="first")
+    res.leads_dropped = s[~open_].sort_values(**order)[cols].reset_index(drop=True)
+    res.leads = s[open_].sort_values(**order)[cols].reset_index(drop=True)
 
 
 # ------------------------------------------------------------------ trends
@@ -503,7 +569,8 @@ def trends(res: Result, data, rev, agent, cday, stages, targets):
                           "conv3_per_day": _div(ga["calls_3m"].sum(), active),
                           "deep_per_day": _div(ga["calls_15_20"].sum() + ga["calls_20p"].sum(), active),
                           "followups": fu_n, "followups_per_day": _div(fu_n, active),
-                          "talk_hrs_per_day": _div(c[c["caller"].isin(callers)]["talk_sec"].sum() / 3600, active)})
+                          "talk_hrs_per_day": _div(c[c["caller"].isin(callers)]["talk_sec"].sum() / 3600, active),
+                          **_zip_mix(res.fu_zip, ws, we, callers)})
         for name, ga in a.groupby("caller"):
             active = int((ga["total_calls"] > 0).sum())
             gc = c[c["caller"] == name]
@@ -519,6 +586,14 @@ def trends(res: Result, data, rev, agent, cday, stages, targets):
                           "followups": fu_n, "followups_per_day": _div(fu_n, active)})
     res.weekly_team = pd.DataFrame(wrows)
     res.weekly_caller = pd.DataFrame(crows)
+
+
+def _zip_mix(fz, lo, hi, callers) -> dict:
+    g = fz[(fz["d"] >= lo) & (fz["d"] <= hi) & fz["owner"].isin(callers)] if len(fz) else fz
+    n = {lvl: int((g["zip"] == lvl).sum()) for lvl in ZIP_LEVELS} if len(g) else {lvl: 0 for lvl in ZIP_LEVELS}
+    rated = sum(n.values())
+    return {"fu_zip_rated": rated, "fu_himod_pct": _div(n["HIGH"] + n["MODERATE"], rated) * 100 if rated else np.nan,
+            "fu_zip_low": n["LOW"]}
 
 
 # ------------------------------------------------------------------ check 3
