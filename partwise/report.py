@@ -369,7 +369,6 @@ def run(inp: Inputs):
         row, hdr = write_table(ws, row + 3, "CALLER-WISE DETAIL",
                                cal.rename(columns={"vertical": "Vertical", "team": "Team", "caller": "Caller Name"}),
                                ["Vertical", "Team", "Caller Name"], total_row=allr, total_label="ALL CALLERS")
-        ws.freeze_panes = ws.cell(row=hdr + 1, column=4)
         ws.auto_filter.ref = f"A{hdr}:{get_column_letter(3 + len(ORDER))}{row - 1}"
         for j, w in enumerate([18, 34, 26] + [13] * len(ORDER), 1):
             ws.column_dimensions[get_column_letter(j)].width = w
@@ -378,39 +377,6 @@ def run(inp: Inputs):
         sheet(f"{name} ({lo}-{hi})", name, lo, hi, f"{name}: {lo}-{hi} {calendar.month_name[mo]} {y}")
     sheet("Monthly Analysis", None, 1, eom, f"MONTHLY ANALYSIS: 1-{till} {calendar.month_name[mo]} {y}")
 
-    ws = wb.create_sheet("Definitions & QC")
-    ws["A1"] = "Definitions, rules and data-quality checks"
-    ws["A1"].font = Font(name=FONT, bold=True, size=14, color="1F3864")
-    rows = [("", ""), ("METRIC DEFINITIONS", ""),
-            ("Lead", "One unique phone number in the call log. Dialled 10 times = 1 lead."),
-            ("Connected lead", f"A lead whose longest single call reached {CONNECT_SECONDS} seconds."),
-            ("DNP lead", f"A lead whose every call was under {CONNECT_SECONDS} seconds - did not pick."),
-            ("Discovery / Roadmap / Follow-ups",
-             "Unique leads reaching that stage. A lead counts in EVERY stage it reached, so the same lead can appear in all three."),
-            ("Discovery -> Enrollments",
-             "Unique enrolled phone numbers whose lead reached Discovery but NOT Roadmap. The stage may have happened at ANY time in the stage history - this month or up to three prior months - and it counts whoever did the stage - the row is decided by the caller credited with the enrollment."),
-            ("Roadmap -> Enrollments",
-             "Unique enrolled phone numbers whose lead reached Roadmap. A number that reached both Discovery and Roadmap is counted here ONLY, never in both columns."),
-            ("Why these two do not add up to Conversions",
-             "Conversions counts every enrollment ROW (a split payment is two rows); these two columns count UNIQUE numbers. They also exclude enrollments whose lead has no Discovery or Roadmap anywhere in the stage history."),
-            ("Conversion", "A 'New enrollment' row in BASE DATA, in the period of its enrollment date. Every row counts - a split payment is two rows and the revenue sheet counts both."),
-            ("", ""), ("SOURCES", ""),
-            ("Calls", "Calling Analytics dashboard (Acefone, MCube, Ozonetel, manual calls) - the same rows as its CDR download. call_owner is the caller; the log's own Vertical column is ignored."),
-            ("Stages - Team Uzair", "Its own live workbook (Discovery / Roadmap / Follow Up sheets)."),
-            ("Stages - Deepanshi & Darshan", "Stage_Changed_Report (Calling Analytics dashboard): Stage_Changed_By = caller, New_Contact_Stage = stage."),
-            ("Conversions", "Sales Team Reports -> BASE DATA, Enrollment = 'New enrollment', credited to 'Caller name (for ops)'."),
-            ("Roster", "Sales Team Reports -> Team Members. Everyone is mapped so totals stay complete; Resigned/Sabbatical are tagged in the caller table."),
-            ("", ""), ("RULES", ""),
-            ("Periods", "1-10, 11-20, 21 to end of month. No overlapping days."),
-            ("Monthly Analysis", "The same three tables for the whole month so far. Leads are re-deduplicated across the month, so its Leads total is normally LOWER than P1+P2+P3 - a number dialled in two periods counts once. Calls, stages and conversions do add up."),
-            ("Zero percentages", "A percentage with a zero denominator shows 0.0%, not a blank."),
-            ("Why totals differ", "Leads are unique at each level, so a vertical can be lower than the sum of its teams, and a team lower than the sum of its callers."),
-            ("", ""), ("CHECKS FROM THIS RUN", "")] + rep.qc
-    for i, (k, v) in enumerate(rows, 2):
-        ws.cell(row=i, column=1, value=k).font = Font(name=FONT, size=10, bold=(v == "" and k != ""))
-        cc = ws.cell(row=i, column=2, value=v)
-        cc.font = Font(name=FONT, size=10)
-        cc.alignment = Alignment(wrap_text=True, vertical="top")
-    ws.column_dimensions["A"].width = 34
-    ws.column_dimensions["B"].width = 110
+    # No "Definitions & QC" tab and no frozen panes (Amit, 5 Nov 2026). The run's checks go to
+    # the GitHub Actions run summary instead.
     return wb, rep.qc, cdr, stg, summary
