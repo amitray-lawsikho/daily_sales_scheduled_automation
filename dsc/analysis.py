@@ -31,23 +31,23 @@ FUNNEL = [
     ("attendance_pct", "Attendance", "of working days with calls", "{:.0f}%",
      "Present {v} of working days vs {b} for the top 3. TL to confirm leave / late log-ins first."),
     ("calls_per_day", "Dialling", "calls per active day", "{:.0f}",
-     "Too few dials. Set a daily dial floor at the top-3 level ({b}); review break time ({brk} h/day)."),
+     "Too few dials. Set a daily dial floor at the top-3 level ({b}); review break time ({brk} min a day)."),
     ("connect_pct", "Connectivity", "of dials answered", "{:.0f}%",
      "Calls are not getting answered. Re-time the calling slots, check number quality and dialler."),
-    ("conv3_per_day", "Conversations", "3-min+ calls per day", "{:.1f}",
+    ("conv3_per_day", "Conversations", "3-min+ calls per day", "{:,.0f}",
      "Calls end early. TL to listen to 5 recordings and fix the opening / need discovery."),
-    ("deep_per_day", "Counselling depth", "15-min+ calls per day", "{:.2f}",
+    ("deep_per_day", "Counselling depth", "15-min+ calls per day", "{:,.0f}",
      "Few full counselling calls. Book roadmap sessions from connected leads."),
-    ("followups_per_day", "Follow-ups", "follow-ups set per day", "{:.1f}",
+    ("followups_per_day", "Follow-ups", "follow-ups set per day", "{:,.0f}",
      "Pipeline is thin: too few leads moved to Follow Up For Closure."),
-    ("enrol_per_100fu", "Closing", "enrolments per 100 follow-ups", "{:.1f}",
+    ("enrol_per_100fu", "Closing", "enrolments per 100 follow-ups", "{:,.0f}",
      "Follow-ups are not closing. TL to join closing calls and review objections and payment links."),
     ("ticket", "Ticket size", "revenue per enrolment (Rs)", "{:,.0f}",
      "Enrolments are small. Pitch the higher-value programme or full payment."),
 ]
 FUNNEL_KEYS = [f[0] for f in FUNNEL]
 EW_LABEL = {"calls_per_day": "calls/day", "connect_pct": "answered %", "conv3_per_day": "3-min calls/day",
-            "deep_per_day": "15-min+ calls/day", "talk_hrs_per_day": "talk h/day", "followups_per_day": "follow-ups/day"}
+            "deep_per_day": "15-min+ calls/day", "talk_hrs_per_day": "talk min/day", "followups_per_day": "follow-ups/day"}
 
 
 @dataclass
@@ -652,8 +652,15 @@ def early_warning(res: Result, agent, cday, stages, roster, rev, targets):
 
 
 # ------------------------------------------------------------------ the why
+def whole(v) -> int:
+    """Whole numbers for call figures (Amit, 5 Nov 2026), rounded half up (2.5 -> 3)."""
+    return int(np.floor(float(v) + 0.5))
+
+
 def _fmt(fmt, v):
     try:
+        if pd.notna(v) and fmt.endswith(".0f}") or (pd.notna(v) and ".0f}" in fmt):
+            v = whole(v)
         return fmt.format(v) if pd.notna(v) else "-"
     except (ValueError, TypeError):
         return "-"
@@ -687,7 +694,7 @@ def root_cause(res: Result):
                     gaps.append({"key": key, "label": label, "unit": unit, "v": _fmt(fmt, v), "b": _fmt(fmt, b),
                                  "short": (1 - (v if pd.notna(v) else 0) / b) * 100,
                                  "step": step.format(v=_fmt(fmt, v), b=_fmt(fmt, b),
-                                                     brk=_fmt("{:.1f}", x["break_hrs_per_day"]))})
+                                                     brk=_fmt("{:,.0f}", x["break_hrs_per_day"] * 60))})
             df.at[i, "gaps"] = gaps
             if gaps:
                 p = gaps[0]
@@ -709,7 +716,7 @@ def root_cause(res: Result):
                         if pd.notna(va) and va > 0 and pd.notna(vb):
                             ch = (vb - va) / va * 100
                             if abs(ch) >= 20:
-                                notes.append(f"{lab} {va:.1f} -> {vb:.1f} ({ch:+.0f}%)")
+                                notes.append(f"{lab} {whole(va)} -> {whole(vb)} ({ch:+.0f}%)")
                     df.at[i, "trend_note"] = "; ".join(notes)
     res.callers = df
 
@@ -750,8 +757,9 @@ def checks(res: Result):
                           "Review the follow-up pipeline with the TL; plan closures for this part of the month.", "red"))
     if res.early is not None and len(res.early):
         for (tm, caller), g in res.early.groupby(["team", "caller"]):
-            ms = "; ".join(f"{EW_LABEL[r.metric]} " + " / ".join(f"{v:.1f}" for v in r.values) + " vs team "
-                           + " / ".join(f"{b:.1f}" for b in r.benchmarks) for r in g.itertuples())
+            k = lambda r: 60 if r.metric == "talk_hrs_per_day" else 1      # talk shown in minutes
+            ms = "; ".join(f"{EW_LABEL[r.metric]} " + " / ".join(str(whole(v * k(r))) for v in r.values) + " vs team "
+                           + " / ".join(str(whole(b * k(r))) for b in r.benchmarks) for r in g.itertuples())
             F.append(Flag(3, tm, caller, f"Off track {E['weeks_running']} parts of the month running: {ms}.",
                           "TL 1:1 on these numbers; re-check at the end of this part (10th / 20th / month end).", "amber"))
     # 4

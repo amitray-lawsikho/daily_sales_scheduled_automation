@@ -26,23 +26,40 @@ from partwise.config import ROOT
 IST = timezone(timedelta(hours=5, minutes=30))
 
 
+MONEY = ("revenue", "mtd", "target", "prorated", "run_rate", "prev_wd_rev", "required_rr", "gap", "ticket", "cum",
+         "same_window", "calling_rev", "collection_rev")
+
+
+def whole_numbers(df: pd.DataFrame) -> pd.DataFrame:
+    """Every non-money number as a whole number (Amit, 5 Nov 2026); hours per day become minutes per day."""
+    df = df.copy()
+    for c in list(df.columns):
+        if c.endswith("_hrs_per_day"):
+            df[c.replace("_hrs_per_day", "_min_per_day")] = df.pop(c) * 60
+    for c in df.columns:
+        if pd.api.types.is_float_dtype(df[c]) and not any(m in c for m in MONEY):
+            df[c] = df[c].map(lambda v: None if pd.isna(v) else A.whole(v)).astype("Int64")
+    return df
+
+
 def write_xlsx(res: A.Result, path: str) -> None:
     cols_drop = ["gaps", "bench_json"]
     with pd.ExcelWriter(path, engine="openpyxl") as xw:
         pd.DataFrame([{"check": f.check, "team": f.team, "who": f.who, "finding": f.what, "next step": f.next_step,
                        "level": f.level} for f in res.flags]).to_excel(xw, sheet_name="Flags", index=False)
-        res.teams.to_excel(xw, sheet_name="Teams MTD", index=False)
-        res.callers.drop(columns=[c for c in cols_drop if c in res.callers], errors="ignore").to_excel(xw, sheet_name="Callers MTD", index=False)
+        whole_numbers(res.teams).to_excel(xw, sheet_name="Teams MTD", index=False)
+        whole_numbers(res.callers.drop(columns=[c for c in cols_drop if c in res.callers], errors="ignore")).to_excel(xw, sheet_name="Callers MTD", index=False)
         leads = res.leads.copy()
         leads.to_excel(xw, sheet_name="Leads not dialled", index=False)
-        res.weekly_team.to_excel(xw, sheet_name="Parts - teams", index=False)
-        res.weekly_caller.to_excel(xw, sheet_name="Parts - callers", index=False)
-        res.monthly.to_excel(xw, sheet_name="Monthly", index=False)
-        res.daily.to_excel(xw, sheet_name="Daily", index=False)
+        whole_numbers(res.weekly_team).to_excel(xw, sheet_name="Parts - teams", index=False)
+        whole_numbers(res.weekly_caller).to_excel(xw, sheet_name="Parts - callers", index=False)
+        whole_numbers(res.monthly).to_excel(xw, sheet_name="Monthly", index=False)
+        whole_numbers(res.daily).to_excel(xw, sheet_name="Daily", index=False)
         e = res.early.copy()
         if len(e):
-            e["values"] = e["values"].map(lambda v: " / ".join(f"{x:.2f}" for x in v))
-            e["benchmarks"] = e["benchmarks"].map(lambda v: " / ".join(f"{x:.2f}" for x in v))
+            k = e["metric"].map(lambda m: 60 if m == "talk_hrs_per_day" else 1)
+            e["values"] = [" / ".join(str(A.whole(x * kk)) for x in v) for v, kk in zip(e["values"], k)]
+            e["benchmarks"] = [" / ".join(str(A.whole(x * kk)) for x in v) for v, kk in zip(e["benchmarks"], k)]
         e.to_excel(xw, sheet_name="Early warning", index=False)
         pd.DataFrame(res.quality, columns=["check", "ok"]).to_excel(xw, sheet_name="Data check", index=False)
         for ws in xw.book.worksheets:
@@ -77,7 +94,7 @@ def write_leads_xlsx(res: A.Result, path: str) -> None:
         for caller, x in g.groupby("caller"):
             rm = int(x["stage"].str.startswith("Roadmap").sum())
             ws.append([tm, caller, len(x), rm, len(x) - rm, int(x["last_call"].isna().sum()),
-                       None if x["hours"].isna().all() else round(float(x["hours"].max()))])
+                       None if x["hours"].isna().all() else A.whole(x["hours"].max())])
     cols = ["Caller", "Phone", "Lead name", "Stage set", "Stage set on", "Last dial (IST)", "Hours since last dial",
             "Current LSQ stage", "Stage checked in", "Zipteams intent (latest)", "Called today? (TL to fill)"]
     sheets = [(ws, hdr_row)]
@@ -92,7 +109,7 @@ def write_leads_xlsx(res: A.Result, path: str) -> None:
         for r in g.itertuples():
             t.append([r.caller, str(r.phone), r.name or "", r.stage, pd.Timestamp(r.stage_date).strftime("%d %b %Y"),
                       "no dial in the window" if pd.isna(r.last_call) else pd.Timestamp(r.last_call).strftime("%d %b %Y %H:%M"),
-                      None if pd.isna(r.hours) else round(float(r.hours)), r.current_stage or "", r.stage_source,
+                      None if pd.isna(r.hours) else A.whole(r.hours), r.current_stage or "", r.stage_source,
                       r.zip_intent or "", ""])
         for c in t["B"][1:]:
             c.number_format = "@"          # keep the number as text: no 9.19E+09, no lost digits

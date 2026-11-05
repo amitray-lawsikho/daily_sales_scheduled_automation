@@ -7,6 +7,7 @@ red/amber/green, current navy #2E5FA3 vs prior light blue). Charts are matplotli
 from __future__ import annotations
 
 import io
+import math
 from datetime import datetime, timedelta, timezone
 
 import matplotlib
@@ -66,8 +67,13 @@ def pct(v) -> str:
     return "-" if v is None or pd.isna(v) else f"{v:.0f}%"
 
 
-def f1(v, d=1) -> str:
-    return "-" if v is None or pd.isna(v) else f"{v:,.{d}f}"
+def f1(v, d=0) -> str:
+    """Whole numbers only for every call figure (Amit, 5 Nov 2026), rounded half up (2.5 -> 3)."""
+    return "-" if v is None or pd.isna(v) else f"{whole(v):,}"
+
+
+def whole(v) -> int:
+    return int(math.floor(float(v) + 0.5))
 
 
 def pace_color(p) -> str:
@@ -221,11 +227,14 @@ def week_takeaways(res: Result, tm: str) -> list[str]:
         ch = _change(g, col)
         if ch:
             a, b, p_ = ch
+            if whole(a) == whole(b):   # whole numbers only: same rounded value reads as no change
+                out.append(f"<b>{name}</b>: about the same, {f1(b)} in the last 2 parts.")
+                continue
             word = "up" if p_ > 5 else "down" if p_ < -5 else "flat"
             colr = GREEN if p_ > 5 else RED if p_ < -5 else G1
             out.append(f"<b>{name}</b>: <font color='{colr}'><b>{word} {abs(p_):.0f}%</b></font> - last 2 parts "
-                       f"{b:,.{d}f} vs {a:,.{d}f} the 2 parts before." if col == "followups_per_wd" else
-                       f"<b>{name}</b>: <font color='{colr}'><b>{word} {abs(p_):.0f}%</b></font> - {b:.1f} vs {a:.1f} before.")
+                       f"{f1(b)} vs {f1(a)} the 2 parts before." if col == "followups_per_wd" else
+                       f"<b>{name}</b>: <font color='{colr}'><b>{word} {abs(p_):.0f}%</b></font> - {f1(b)} vs {f1(a)} before.")
     return out
 
 
@@ -448,9 +457,9 @@ def trends_page(res: Result, story):
     cols = []
     for tm in TEAMS:
         cell = [P(f"<b>{tm}</b>", "h2"), chart_week_revenue(res, tm),
-                chart_week_count(res, tm, "followups_per_wd", "Follow-ups set per working day", lambda v: f"{v:.1f}", "#0F8C82"),
+                chart_week_count(res, tm, "followups_per_wd", "Follow-ups set per working day", f1, "#0F8C82"),
                 chart_week_count(res, tm, "deep_per_day", "Counselling calls (15 min+) per caller per day",
-                                 lambda v: f"{v:.1f}", "#7E57C2"),
+                                 f1, "#7E57C2"),
                 Spacer(0, 2)] + [P("&bull; " + t, "p") for t in week_takeaways(res, tm)]
         cols.append(cell)
     story.append(Table([cols], colWidths=[CW / 3] * 3, style=[("VALIGN", (0, 0), (-1, -1), "TOP")]))
@@ -466,7 +475,7 @@ def trends_page(res: Result, story):
     for _, x in mo.iterrows():
         rows.append([short(x["team"]), pd.Timestamp(x["month"] + "-01").strftime("%b %Y") + (" MTD" if x["partial"] else ""),
                      lakh(x["revenue"]), lakh(x["target"]), pct(x["achv_pct"]), lakh(x["same_window"]), x["enrolments"],
-                     f1(x["calls_per_day"], 0), pct(x["connect_pct"]), f1(x["conv3_per_day"]), f1(x["deep_per_day"], 2),
+                     f1(x["calls_per_day"], 0), pct(x["connect_pct"]), f1(x["conv3_per_day"]), f1(x["deep_per_day"]),
                      x["followups"], f1(x["followups_per_day"]), f1(x["enrol_per_100fu"])])
     story.append(table(rows, [1.2 * inch, 0.8 * inch] + [(CW - 2.0 * inch) / 12] * 12))
     story.append(P(f"Same days = revenue on days 1-{res.day.day} of that month. Calling data starts 29 Jul 2026; "
@@ -506,8 +515,9 @@ def checks_page(res: Result, story):
         rows = [["Team", "Caller", "Number off track", "Caller (part by part)", "Team median", "Below by"]]
         for r in e.sort_values(["team", "caller"]).itertuples():
             below = np.mean([(1 - v / b) * 100 for v, b in zip(r.values, r.benchmarks)])
-            rows.append([short(r.team), r.caller, EW_LABEL[r.metric], " / ".join(f1(v) for v in r.values),
-                         " / ".join(f1(b) for b in r.benchmarks), f"{below:.0f}%"])
+            k = 60 if r.metric == "talk_hrs_per_day" else 1      # talk shown in minutes
+            rows.append([short(r.team), r.caller, EW_LABEL[r.metric], " / ".join(f1(v * k) for v in r.values),
+                         " / ".join(f1(b * k) for b in r.benchmarks), f"{below:.0f}%"])
         story.append(table(rows, [1.2 * inch, 1.4 * inch, 1.3 * inch, 1.5 * inch, 1.5 * inch, 0.8 * inch]))
     story.append(P(f"Caller off track = below {CFG['early_warning']['off_track_pct_of_benchmark']}% of the team median "
                    f"(callers, not team leaders) in each of the last {CFG['early_warning']['weeks_running']} complete parts of the month.",
@@ -534,12 +544,12 @@ def team_pages(res: Result, tm: str, story):
     story.append(Table([[chart_daily(res, tm), chart_pacing(res, tm)]], colWidths=[CW / 2] * 2))
     wt = res.weekly_team[res.weekly_team["team"] == tm]
     rows = [["Part", "Revenue", "Target", "vs target", "Enrol.", "Calls/day", "Answered", "3-min/day", "15-min+/day",
-             "Talk h/day", "Follow-ups", "FU/day", "Zip Hi+Mod"]]
+             "Talk min/day", "Follow-ups", "FU/day", "Zip Hi+Mod"]]
     for r in wt.itertuples():
         vr = r.revenue / r.run_rate * 100 if r.run_rate else np.nan
         rows.append([r.label + ("" if r.complete else " (so far)"), rs(r.revenue), rs(r.run_rate),
                      P(f"<font color='{pace_color(vr)}'><b>{pct(vr)}</b></font>"), r.enrolments, f1(r.calls_per_day, 0),
-                     pct(r.connect_pct), f1(r.conv3_per_day), f1(r.deep_per_day, 2), f1(r.talk_hrs_per_day),
+                     pct(r.connect_pct), f1(r.conv3_per_day), f1(r.deep_per_day), f1(r.talk_hrs_per_day * 60),
                      r.followups, f1(r.followups_per_day),
                      "-" if not r.fu_zip_rated else f"{pct(r.fu_himod_pct)} of {r.fu_zip_rated}"])
     story.append(P("Part by part (1-10, 11-20, 21-end; per caller per active day; FU Zip High+Mod = follow-ups whose Zipteams "
@@ -552,7 +562,7 @@ def team_pages(res: Result, tm: str, story):
     hi = res.leads.groupby("caller").size() if res.leads is not None and len(res.leads) else pd.Series(dtype=int)
     has_zip = "zip_rated" in cal.columns and cal["zip_rated"].sum() > 0
     hdr = ["Caller", "Target", "MTD", "Achv", res.prev_wd.strftime("%d %b"), "Enr", "Days", "Calls /day", "Ans %", "3m",
-           "15-20", "20+", "Talk h", "Avg /ans", "Long- est", "Break h/day", "Late", "FU", "FU /day", "FU level", "FU→ Enr",
+           "15-20", "20+", "Talk h", "Avg /ans", "Long- est", "Break min/day", "Late", "FU", "FU /day", "FU level", "FU→ Enr",
            "HI >24h"] + (["FU Zip H/M/N/L"] if has_zip else []) + ["Why (first gap vs the team's top 3)"]
     rows = [hdr]
     for r in cal.itertuples():
@@ -560,8 +570,8 @@ def team_pages(res: Result, tm: str, story):
         lvl_c = {"High": GREEN, "Medium": AMBER, "Low": RED}.get(r.followup_level, G1)
         rows.append([P(name), lakh(r.target), lakh(r.mtd), P(f"<font color='{pace_color(r.achv_pct)}'><b>{pct(r.achv_pct)}</b></font>"),
                      lakh(r.prev_wd_rev) if r.prev_wd_rev else "-", r.enrolments, f"{r.present_days}/{len(res.elapsed)}", f1(r.calls_per_day, 0),
-                     pct(r.connect_pct), r.calls_3m, r.calls_15_20, r.calls_20p, f1(r.talk_hrs, 1), f1(r.avg_talk_min, 1),
-                     f1(r.longest_min, 0), f1(r.break_hrs_per_day, 1), r.late_days, r.followups, f1(r.followups_per_day),
+                     pct(r.connect_pct), r.calls_3m, r.calls_15_20, r.calls_20p, f1(r.talk_hrs), f1(r.avg_talk_min),
+                     f1(r.longest_min), f1(r.break_hrs_per_day * 60), r.late_days, r.followups, f1(r.followups_per_day),
                      P(f"<font color='{lvl_c}'><b>{r.followup_level}</b></font>"), pct(r.fu_conv_pct), int(hi.get(r.caller, 0))]
                     + ([P(f"<font color='{GREEN}'>{r.zip_high}</font>/{r.zip_moderate}/{r.zip_neutral}/"
                            f"<font color='{RED}'>{r.zip_low}</font>")] if has_zip else []) + [P(r.primary if not r.lead else "")])
@@ -571,8 +581,8 @@ def team_pages(res: Result, tm: str, story):
     hdr_cells = [P(f"<font color='white'><b>{h}</b></font>") for h in rows[0]]
     rows[0] = hdr_cells
     story.append(table(rows, widths, font=6.6))
-    story.append(P("Target/MTD in Rs lakh. Days = working days with calls / working days so far. 3m = 3-min+ calls, 15-20 and 20+ = minutes. Talk h = sum of call "
-                   "durations; Avg/ans and Longest in minutes. Late = days flagged Late Check-In. FU = leads moved to Follow Up For "
+    story.append(P("Target/MTD in Rs lakh. Days = working days with calls / working days so far. 3m = 3-min+ calls, 15-20 and 20+ = minutes. Talk h = hours on calls this month, sum of call "
+                   "durations. Avg/ans and Longest in minutes; Break in minutes a day. All call figures are whole numbers. Late = days flagged Late Check-In. FU = leads moved to Follow Up For "
                    "Closure (LSQ). FU level vs team median per active day: High >= "
                    f"{CFG['followup_level']['high_pct']}%, Low < {CFG['followup_level']['low_pct']}%. FU→Enr = follow-up leads "
                    "this month that enrolled (BASE DATA, phone match). HI >24h = check 5 leads held (numbers in the leads Excel). "
@@ -659,7 +669,7 @@ def why_card(res: Result, r) -> Table:
     if r.trend_note:
         extra.append(f"<b>Last 2 parts vs the 2 before</b>: {r.trend_note}.")
     if r.late_days:
-        extra.append(f"Late check-in on {r.late_days} day(s); breaks {f1(r.break_hrs_per_day)} h/day.")
+        extra.append(f"Late check-in on {r.late_days} day(s); breaks {f1(r.break_hrs_per_day * 60)} min/day.")
     rows.append([P(" ".join(extra), "cell"), "", "", ""])
     style.append(("SPAN", (0, len(rows) - 1), (-1, len(rows) - 1)))
     w = CW / 2 - 8

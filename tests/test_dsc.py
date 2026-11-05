@@ -193,3 +193,15 @@ class LiveStage(unittest.TestCase):
         self.assertEqual((c.loc["Good One", "zip_high"], c.loc["Good One", "zip_low"]), (1, 1))
         self.assertEqual(c.loc["Good One", "zip_himod_pct"], 50)
         self.assertEqual(c.loc["Slow Dialler", "zip_rated"], 0)
+
+
+class WholeNumbers(unittest.TestCase):
+    def test_call_figures_have_no_decimals(self):
+        from dsc import pdf
+        self.assertEqual([A.whole(x) for x in (2.5, 2.49, 0.5, 13.95)], [3, 2, 1, 14])
+        self.assertEqual(pdf.f1(2.5), "3")
+        res = A.run(synthetic())
+        import re
+        texts = [f.what for f in res.flags if f.check == 3 and f.who != "Team"]
+        self.assertTrue(texts)
+        self.assertFalse([t for t in texts if re.search(r"\d\.\d", t)])
