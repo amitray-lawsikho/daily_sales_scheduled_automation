@@ -1,7 +1,10 @@
-# Part Wise Connectivity – instructions for Claude sessions on this repo
+# Part Wise Connectivity + Daily Sales Check – instructions for Claude sessions on this repo
 
-Scheduled report for Amit Ray (amitray@lawsikho.in). GitHub Actions runs `python -m partwise` at 12:00 IST on
-working days. There is no Claude or LLM call in the runs. Claude's job is only to maintain the repo and the
+Two scheduled reports for Amit Ray (amitray@lawsikho.in). `.github/workflows/daily-reports.yml` starts at 11:45 IST
+every day: on a working day it first makes sure the Revenue and Calling dashboards have refreshed after 11:30 IST
+(`python -m dsc.refresh`, which starts and waits for a refresh if needed; both Supabase projects also have an
+11:35 IST pg_cron refresh, added 5 Nov 2026 so the 12:00 MTD routine sees fresh dashboards too), then runs
+`python -m partwise` and `python -m dsc` side by side. There is no Claude or LLM call in the runs. Claude's job is only to maintain the repo and the
 month files. Never compute a report figure by hand.
 
 ## The monthly hand-off (most common request)
@@ -43,7 +46,29 @@ new resignations before anything else. The latest Team Members sheet applies to 
   5 Nov 2026); the QC notes go to the GitHub Actions run summary.
 - Always use `norm_phone` (float `.0` bug) and `norm_stage` (`Roadmap\xa0Done`) on new feeds.
 
+## Daily Sales Check (`dsc/`, Amit 5 Nov 2026)
+
+PDF + xlsx for Elite, Corporate law - Anas, Corporate law - Jyoti (`config/dsc.json` `teams`; never other teams),
+uploaded to Drive › Team Uzair Performance (Amit) › Daily Sales Check. Data to yesterday, on the working days of
+`config/months/<month>.json` (the same file as Part Wise). Python computes every number.
+
+- Checks: 1 data fresh/complete, 2 team revenue on the previous working day vs daily run-rate (target / working
+  days), 3 early warning off track 2 complete weeks running (caller below 75% of team median; team weekly revenue
+  below run-rate), 4 below 70% of pro-rated MTD target after the 15th, 5 high-intent leads (latest stage Roadmap
+  Done / Follow Up For Closure in 14 days, still open in 'Follow-up Status', not in BASE DATA) not dialled by anyone
+  for 24 h, with callers and numbers, 6 top / bottom 3 by achievement of pro-rated target. Check 7 (bootcamp) parked.
+- Trends: monthly (4 months, month's own team list), weekly (6 Mon-Sun weeks), daily; follow-ups per caller with a
+  High / Medium / Low level vs the team median; the "why" = first funnel step below 75% of the team's top 3.
+- Sources: Revenue Analytics `rev_daily`; Calling Analytics `agent_day`, `calls`, `team_map`, `stage_changes`;
+  Team Uzair LSQ live sheet + monthly copies (stages, 'Follow-up Status'); MonthwiseTeamList in
+  `team_members_data_amit` (targets; Active rows with a Target); BASE DATA (enrolled phones); LSQ for Zipteams.
+- Zipteams posts to LSQ as a custom activity. Not mapped yet: set `zipteams.activity_event` and `level_field` in
+  `config/dsc.json` from the activity types each run lists in its data check.
+- Every threshold is in `config/dsc.json`; ask Amit before changing one. Read-only on every source; the only write
+  is the dashboards' own refresh call. `output/` holds phone numbers and is git-ignored.
+- Test: `python -m dsc run --offline <folder saved with --save>`; `python -m dsc.schedule --today <date>`.
+
 ## Secrets
 
-Only as GitHub secrets: `CALL_SUPABASE_KEY`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`,
+Only as GitHub secrets: `CALL_SUPABASE_KEY`, `REV_SUPABASE_KEY`, `LSQ_HOST`, `LSQ_ACCESS_KEY`, `LSQ_SECRET_KEY`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`,
 `GOOGLE_OAUTH_REFRESH_TOKEN` (or `GOOGLE_SERVICE_ACCOUNT_JSON`). Never print, commit or paste them.

@@ -1,10 +1,14 @@
 name: Part Wise Connectivity
 
-# 12:00 IST every day; the gate step stops in seconds unless today is a working day in
-# config/months/<month>.json (or the 1st, to close the previous month). No Claude / LLM call in runs.
+# Scheduled by daily-reports.yml (around 12:00 IST, after both dashboards have refreshed); the gate
+# step stops in seconds unless today is a working day in config/months/<month>.json (or the 1st, to
+# close the previous month). Run by hand with "Run workflow". No Claude / LLM call in runs.
 on:
-  schedule:
-    - cron: "30 6 * * *"
+  workflow_call:
+    inputs:
+      month: {type: string, default: ""}
+      till: {type: string, default: ""}
+      write_history: {type: string, default: auto}
   workflow_dispatch:
     inputs:
       month:

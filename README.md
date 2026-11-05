@@ -1,4 +1,28 @@
-# Part Wise Connectivity – scheduled report
+# Scheduled sales reports (Part Wise Connectivity + Daily Sales Check)
+
+Both run from **Actions › Daily reports (12:00 IST)**: at 11:45 IST it checks that the Revenue and Calling dashboards
+have refreshed after 11:30 (the revenue sheet is complete about then), starts a refresh and waits if not, then
+builds both reports. Week-off days stop in seconds.
+
+## Daily Sales Check
+
+PDF (+ xlsx with every table and the full lead list) for **Elite, Corporate law - Anas, Corporate law - Jyoti**, in
+Drive › Team performance & Reports › Team Uzair Performance (Amit) › Daily Sales Check, named
+`Daily Sales Check <date>.pdf`. Pages: overview of the checks, trends (month / week / day), the checks in detail,
+then per team: where it stands (daily revenue vs run-rate, pacing vs earlier months, weekly funnel), callers
+(calling, talk time, follow-ups, revenue), **why revenue is not coming** for each flagged caller (funnel vs the
+team's top 3, with the next step), and the high-intent leads not dialled for 24 h with their numbers.
+
+```bash
+python -m dsc run --date 2026-11-04            # live (needs the keys below)
+python -m dsc run --date 2026-11-04 --publish  # and upload to Drive
+python -m dsc.refresh --check                  # are both dashboards fresh?
+```
+
+Settings and thresholds: `config/dsc.json`. Extra GitHub secrets: `REV_SUPABASE_KEY` (Revenue Analytics
+service-role key), `LSQ_HOST`, `LSQ_ACCESS_KEY`, `LSQ_SECRET_KEY` (Zipteams data in LSQ).
+
+# Part Wise Connectivity
 
 Builds **"<Month>: Part Wise Performance"** in the Drive folder *Team performance & Reports › Partwise Data*
 every working day at **12:00 IST**, covering the 1st of the month to yesterday. It is the same report the

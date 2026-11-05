@@ -1,0 +1,70 @@
+{
+  "_readme": "Daily Sales Check settings (python -m dsc). Every threshold lives here; change it here, never in code. Working days come from config/months/YYYY-MM.json (shared with Part Wise).",
+
+  "teams": ["Elite", "Corporate law - Anas", "Corporate law - Jyoti"],
+  "_teams_note": "Amit's teams (5 Nov 2026). Never report other teams.",
+
+  "targets_sheet": "https://docs.google.com/spreadsheets/d/1OHn0KIS01NzmOiEID12j11G4ZhzeCiSe1X5KKNpLXns/edit",
+  "targets_tab": "MonthwiseTeamList",
+  "_targets_note": "team_members_data_amit. Column 'Month' = first of the month (DD/MM/YYYY). Only Status = Active rows with a Target count. Team target = sum of its callers' targets.",
+
+  "lead_roles": ["TL", "ATL", "Manager", "AD"],
+  "_lead_roles_note": "Designations treated as team leaders: their revenue counts in the team total, but they are not ranked as callers and not flagged in early warning.",
+
+  "revenue_supabase_url": "https://oifzauaspvfkmzyutwtj.supabase.co",
+  "calling_supabase_url": "https://ybkldfcilvibryoxcuvq.supabase.co",
+
+  "refresh": {
+    "fresh_after_ist": "11:30",
+    "wait_minutes": 30,
+    "_note": "Before the run both dashboards must have refreshed after 11:30 IST today (the revenue sheet is complete about 11:30). If not, the run starts a refresh of each and waits up to wait_minutes."
+  },
+
+  "run_rate": {
+    "_note": "Check 2. Daily run-rate = monthly target / working days in the month. A team is flagged with zero revenue on the previous working day, or revenue below run-rate x min_pct/100.",
+    "min_pct": 100
+  },
+
+  "early_warning": {
+    "weeks_running": 2,
+    "off_track_pct_of_benchmark": 75,
+    "metrics": ["calls_per_day", "connect_pct", "conv3_per_day", "deep_per_day", "talk_hrs_per_day", "followups_per_day"],
+    "_note": "Check 3. For each of the last completed weeks (Mon-Sun), a caller's number is off track when it is below off_track_pct_of_benchmark % of the team benchmark (median of the team's callers that week). Flagged when off track weeks_running weeks in a row. Team revenue is off track when a week's revenue is below that week's run-rate (target / working days x working days in the week)."
+  },
+
+  "mtd": {"after_day": 15, "min_pct": 70,
+          "_note": "Check 4. MTD achievement = MTD revenue / (monthly target x working days elapsed / working days in month). Flag below min_pct after day after_day."},
+
+  "leads": {
+    "stages": ["Roadmap Done", "Follow Up For Closure"],
+    "lookback_days": 14,
+    "untouched_hours": 24,
+    "max_listed_per_caller": 12,
+    "_note": "Check 5. A high-intent lead = a phone whose latest stage in the last lookback_days is one of 'stages' (LSQ stage report + Team Uzair LSQ live sheet), not enrolled this month or last (BASE DATA 'New enrollment'). Untouched = no call to that number by anyone for more than untouched_hours before the latest call in the data. Held by the caller who set the stage."
+  },
+
+  "top_bottom": {"n": 3, "_note": "Check 6. Ranked by MTD achievement of pro-rated target; callers with no target and team leaders are not ranked."},
+
+  "root_cause": {
+    "gap_pct": 75,
+    "benchmark": "top3",
+    "_note": "For every flagged caller, each funnel step is compared with the benchmark: the median of the team's top 3 callers by MTD revenue. A step below gap_pct % of the benchmark is a gap; the first gap in funnel order is the primary reason."
+  },
+
+  "followup_level": {"high_pct": 125, "low_pct": 75,
+                     "_note": "Follow-ups per active day vs the team median (callers, not team leaders): at or above high_pct % = High, below low_pct % = Low, else Medium. Source: LSQ 'Follow Up For Closure' stage changes (stage report + Team Uzair LSQ sheet). Zipteams call data is not wired in yet."},
+
+  "zipteams": {
+    "activity_event": null,
+    "level_field": null,
+    "owner_field": "CreatedByName",
+    "discover": ["zip"],
+    "_note": "Zipteams posts its call data to LeadSquared as a custom activity. Set activity_event to that activity's code and level_field to the field holding High/Medium/Low; until then each run lists matching LSQ activity types in its notes."
+  },
+
+  "trend": {"months": 4, "weeks": 6},
+
+  "drive_folder_id": "1Q2ShWDipHnZgmDD2FZQOvPQ3D9fzDL47",
+  "drive_subfolder": "Daily Sales Check",
+  "_drive_note": "Team performance & Reports > Team Uzair Performance (Amit) > Daily Sales Check (created on the first run). One PDF and one xlsx per run date, replaced if re-run."
+}
