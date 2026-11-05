@@ -54,6 +54,9 @@
   "followup_level": {"high_pct": 125, "low_pct": 75,
                      "_note": "Follow-ups per active day vs the team median (callers, not team leaders): at or above high_pct % = High, below low_pct % = Low, else Medium. Source: LSQ 'Follow Up For Closure' stage changes (stage report + Team Uzair LSQ sheet). Zipteams call data is not wired in yet."},
 
+  "lsq_budget_minutes": {"stages": 8, "zipteams": 6,
+                         "_note": "Most minutes each LSQ read may take, so the 12:00 report is never held up. The run notes say when a budget was reached."},
+
   "zipteams": {
     "activity_event": 237,
     "level_field": "mx_Custom_1",

@@ -11,7 +11,8 @@
    fit in one page is cut into smaller windows (paging a large result skips rows - found 5 Oct 2026).
 
 Load: LSQ allows 30 requests per 5 s for the whole account, shared with diallers and Zipteams. This module
-sends one request at a time, about 2 a second at most, and the bulk activity read at most once every 5 s.
+sends one request at a time (about 2-3 a second), the bulk activity read at most once every 2.5 s, and stops
+each part at a time budget (config "lsq_budget_minutes") so the 12:00 report is never held up.
 """
 from __future__ import annotations
 
@@ -30,7 +31,7 @@ ZIP_COLS = ["date", "prospect_id", "level", "created_ist"]
 
 
 class LSQ:
-    GAP, BULK_GAP = 0.5, 5.0
+    GAP, BULK_GAP = 0.35, 2.5
 
     def __init__(self):
         host = os.environ.get("LSQ_HOST", "").strip()
@@ -93,12 +94,17 @@ class LSQ:
         cuts = [lo + timedelta(seconds=secs * k // pieces) for k in range(pieces)] + [hi]
         return [x for a, b in zip(cuts, cuts[1:]) for x in self._window(event, a, b, page)]
 
-    def activities_created(self, event: int, lo: datetime, hi: datetime, margin=timedelta(days=1)) -> list[dict]:
-        """Activities CREATED in [lo, hi] (the filter is on ModifiedOn: read to hi + margin, keep by CreatedOn)."""
+    def activities_created(self, event: int, lo: datetime, hi: datetime, margin=timedelta(days=1),
+                           budget_s: float | None = None) -> tuple[list[dict], datetime]:
+        """Activities CREATED in [lo, hi] (the filter is on ModifiedOn: read to hi + margin, keep by CreatedOn).
+        Newest day first; stops at the time budget. Returns (rows, earliest time covered)."""
         stop = min(hi + margin, datetime.now(timezone.utc))
-        seen, out, day = set(), [], lo
-        while day < stop:
-            end = min(day + timedelta(days=1), stop)
+        seen, out, t0 = set(), [], time.time()
+        end = stop
+        while end > lo:
+            if budget_s and time.time() - t0 > budget_s:
+                break
+            day = max(end - timedelta(days=1), lo)
             for a in self._window(event, day, end):
                 key = a.get("ProspectActivityId") or a.get("Id")
                 t = utc(a.get("CreatedOn"))
@@ -106,8 +112,8 @@ class LSQ:
                     continue
                 seen.add(key)
                 out.append(a)
-            day = end
-        return out
+            end = day
+        return out, end
 
 
 def utc(s) -> datetime | None:
@@ -145,7 +151,11 @@ def lead_status(cands: pd.DataFrame, fresh: dict, api: LSQ | None = None) -> pd.
                      "how": how})
 
     t0 = time.time()
+    budget = CFG.get("lsq_budget_minutes", {}).get("stages", 8) * 60
     for r in cands.itertuples():
+        if time.time() - t0 > budget:
+            fresh["lsq_leads_budget"] = "time budget reached"
+            break
         try:
             lead = api.lead_by_id(r.prospect_id) if r.prospect_id else None
             if lead:
@@ -179,8 +189,9 @@ def load_zipteams(lo: date, hi: date, fresh: dict, api: LSQ | None = None) -> pd
     ev = int(z.get("activity_event") or 237)
     t0 = time.time()
     try:
-        rows = api.activities_created(ev, datetime.combine(lo, datetime.min.time(), IST),
-                                      datetime.combine(hi, datetime.max.time(), IST))
+        rows, covered = api.activities_created(ev, datetime.combine(lo, datetime.min.time(), IST),
+                                               datetime.combine(hi, datetime.max.time(), IST),
+                                               budget_s=CFG.get("lsq_budget_minutes", {}).get("zipteams", 6) * 60)
     except requests.RequestException as e:
         fresh["zipteams"] = f"LSQ read failed: {str(e)[:200]}"
         return pd.DataFrame(columns=ZIP_COLS)
@@ -189,5 +200,7 @@ def load_zipteams(lo: date, hi: date, fresh: dict, api: LSQ | None = None) -> pd
                        "prospect_id": [r.get("RelatedProspectId") or "" for r in rows],
                        "level": [str(r.get(field) or "NOT_AVAILABLE").strip().upper() for r in rows]}, columns=["created_ist", "prospect_id", "level"])
     df["date"] = df["created_ist"].str[:10]
-    fresh["zipteams"] = f"{len(df):,} Zipteams notes (activity {ev}) read from LSQ for {lo}..{hi} in {time.time() - t0:.0f} s"
+    first = covered.astimezone(IST).date()
+    fresh["zipteams"] = (f"{len(df):,} Zipteams notes (activity {ev}) read from LSQ for {max(first, lo)}..{hi} in {time.time() - t0:.0f} s"
+                         + (f" (time budget reached: days before {first} not read)" if first > lo else ""))
     return df[ZIP_COLS]

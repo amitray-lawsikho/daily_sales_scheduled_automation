@@ -301,16 +301,26 @@ def enrolled_frame(b: pd.DataFrame) -> pd.DataFrame:
 
 def load_live(day: date) -> Data:
     w, fresh = windows(day), {}
+    t0 = time.time()
+    step = lambda name: print(f"[{time.time() - t0:5.0f} s] {name}", flush=True)
     rev = load_revenue(day, w, fresh)
+    step(f"revenue: {len(rev):,} rows")
     agent, call_day, touches, st = load_calling(day, w, fresh)
+    step(f"calling: {len(agent):,} caller-days, {len(touches):,} dialled numbers, {len(st):,} stage changes")
     targets, uz, enrolled, lead_status = load_google(day, w, fresh)
+    step(f"sheets: {len(targets):,} team-list rows, {len(uz):,} Uzair stage rows, {len(enrolled):,} enrolled phones")
     stages = pd.concat([st, uz], ignore_index=True)
     stages = stages[stages["phone"].str.len() == 10].drop_duplicates(["date", "phone", "stage", "owner"])
     from dsc.analysis import lead_candidates
     from dsc.lsq import lead_status as lsq_lead_status, load_zipteams
     z = load_zipteams(day - timedelta(days=CFG["zipteams"]["days"]), day, fresh)
-    cands = lead_candidates(day, stages, touches, enrolled)
+    step(f"Zipteams: {fresh.get('zipteams')}")
+    # only my teams' leads: stage set by a caller on this or last month's team list (LSQ load stays small)
+    months = {month_key(day), month_key(add_months(month_first(day), -1))}
+    mine = set(targets.loc[targets["month"].isin(months), "caller"])
+    cands = lead_candidates(day, stages[stages["owner"].isin(mine)], touches, enrolled)
     lsq = lsq_lead_status(cands[["phone", "prospect_id"]], fresh)
+    step(f"LSQ stages: {fresh.get('lsq_leads')}")
     return Data(day, rev, agent, call_day, touches, stages, targets, enrolled, lead_status, z, lsq, fresh)
 
 
