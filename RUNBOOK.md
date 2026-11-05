@@ -4,7 +4,8 @@ This runbook is the procedure for **every** MTD run: the daily 12:00 PM IST sche
 any manual "Run MTD analysis" prompt. Claude follows it step by step. The analysis rules are in
 `docs/RULES.md`; the full playbook from the Cowork project is in `docs/playbook/`.
 
-Work on branch `claude/epic-hamilton-0k0ar3` (pull it first, push to it at the end).
+Work on branch `claude/epic-hamilton-0k0ar3` (pull it first, push to it at the end). **Never open a
+pull request**, and never ask the user for a daily manual step. Runs push directly to this branch.
 
 ---
 

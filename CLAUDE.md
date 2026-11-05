@@ -12,6 +12,12 @@ project "MTD Revenue Analysis".
   the 12-month window. Only the current month (or an explicitly re-uploaded month) is rebuilt.
 - The monthly sheet registry and working-day calendar are in `config/monthly_sheets.json`; the scheduled task fires only on working days (RUNBOOK section C).
 - The monthly sheet registry is `config/monthly_sheets.json`. With no sheet registered for the month, do not produce deliverables.
+- **Never create a pull request** (user, 05 Nov 2026). The automation lives on branch
+  `claude/epic-hamilton-0k0ar3`: every run commits and pushes there directly. Merging into `main`
+  is not needed for the schedule to work.
+- **Never ask the user to do anything manually on a daily basis.** Each run fetches, builds, saves
+  and delivers on its own. The user only acts on the 1st of the month (sheet link plus working
+  schedule), when they choose to answer an anomaly question, or when they want a manual "Run MTD analysis".
 - Keep in-chat output brief. The analysis lives in the PDF.
 - The workbook contains customer PII (names, phones, emails). Never commit the workbook or
   anything from `.work/`. Commit only `data/`, `reports/` and `config/`.
