@@ -30,7 +30,7 @@ FILES = {"rev": ["txn_date", "team", "caller", "caller_status", "revenue", "enro
                    "prod_sec", "break_sec", "break_count", "unique_leads", "issues"],
          "call_day": ["call_date", "caller", "talk_sec", "longest_sec"],
          "touches": ["phone", "last_call"],
-         "stages": ["date", "phone", "stage", "owner", "src"],
+         "stages": ["date", "phone", "stage", "owner", "src", "name"],
          "targets": ["month", "caller", "team", "role", "status", "target"],
          "enrolled": ["phone"],
          "lead_status": ["phone", "current_stage", "current_owner"],
@@ -195,14 +195,16 @@ def load_calling(day: date, w: dict, fresh: dict) -> tuple[pd.DataFrame, pd.Data
         touches = t.groupby("phone")["last_call"].max().reset_index()
     fresh["latest_call"] = str(touches["last_call"].max()) if len(touches) else None
 
-    st = pd.DataFrame(db.keyset("stage_changes", "id,date,phone,new_stage,changed_by",
+    st = pd.DataFrame(db.keyset("stage_changes", "id,date,phone,new_stage,changed_by,first_name,last_name",
                                 [("date", f"gte.{w['months_from']}"), ("date", f"lte.{day}")]))
     stages = pd.DataFrame(columns=FILES["stages"])
     if len(st):
         st["stage"] = norm_stage(st["new_stage"]).map(STAGE_KEY).values
         st["owner"] = st["changed_by"].astype(str).str.lower().str.strip().map(owner_of).fillna(st["changed_by"])
         stages = pd.DataFrame({"date": st["date"], "phone": norm_phone(st["phone"]), "stage": st["stage"],
-                               "owner": st["owner"], "src": "LSQ stage report"}).dropna(subset=["stage"])
+                               "owner": st["owner"], "src": "LSQ stage report",
+                               "name": (st["first_name"].fillna("").astype(str) + " " + st["last_name"].fillna("").astype(str)).str.strip()
+                               }).dropna(subset=["stage"])
     return agent, call_day, touches, stages
 
 
@@ -282,7 +284,8 @@ def targets_frame(tl: pd.DataFrame) -> pd.DataFrame:
 def uzair_frame(d: pd.DataFrame, stage: str, mk: str | None = None) -> pd.DataFrame:
     dt = to_dt(d["Date"]) if "Date" in d.columns else to_dt(d.get("Timestamp"))
     out = pd.DataFrame({"date": dt.dt.strftime("%Y-%m-%d"), "phone": norm_phone(d["Phone Number"]),
-                        "stage": STAGE_KEY[stage], "owner": d["Owner"].astype(str).str.strip(), "src": "Team Uzair LSQ sheet"})
+                        "stage": STAGE_KEY[stage], "owner": d["Owner"].astype(str).str.strip(), "src": "Team Uzair LSQ sheet",
+                        "name": d["Name"].fillna("").astype(str).str.strip() if "Name" in d.columns else ""})
     out = out[out["date"].notna()]
     return out if mk is None else out[out["date"].str[:7] == mk]
 

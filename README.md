@@ -11,7 +11,9 @@ Drive › Team performance & Reports › Team Uzair Performance (Amit) › Daily
 `Daily Sales Check <date>.pdf`. Pages: overview of the checks, trends (month / week / day), the checks in detail,
 then per team: where it stands (daily revenue vs run-rate, pacing vs earlier months, weekly funnel), callers
 (calling, talk time, follow-ups, revenue), **why revenue is not coming** for each flagged caller (funnel vs the
-team's top 3, with the next step), and the high-intent leads not dialled for 24 h with their numbers.
+team's top 3, with the next step), and a per-caller count of high-intent leads not dialled for 24 h.
+The call list itself is a separate Excel, `High-intent leads not dialled <date>.xlsx`: a summary sheet and one
+sheet per team with caller, phone number, lead name, stage, last dial and hours since, sorted oldest first.
 
 ```bash
 python -m dsc run --date 2026-11-04            # live (needs the keys below)

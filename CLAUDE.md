@@ -48,7 +48,9 @@ new resignations before anything else. The latest Team Members sheet applies to 
 
 ## Daily Sales Check (`dsc/`, Amit 5 Nov 2026)
 
-PDF + xlsx for Elite, Corporate law - Anas, Corporate law - Jyoti (`config/dsc.json` `teams`; never other teams),
+PDF + two xlsx (all tables; "High-intent leads not dialled <date>" = the check-5 call list with real phone
+numbers and lead names, one sheet per team; the PDF shows only per-caller counts, Amit 5 Nov 2026) for Elite,
+Corporate law - Anas, Corporate law - Jyoti (`config/dsc.json` `teams`; never other teams),
 uploaded to Drive › Team Uzair Performance (Amit) › Daily Sales Check. Data to yesterday, on the working days of
 `config/months/<month>.json` (the same file as Part Wise). Python computes every number.
 

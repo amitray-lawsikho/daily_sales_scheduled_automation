@@ -6,7 +6,8 @@
     python -m dsc run --save DIR               # also keep the loaded inputs (contain phones; git-ignored out/)
     python -m dsc run --publish                # upload the PDF + xlsx to Drive
 
-Writes output/dsc/<date>/: Daily Sales Check <date>.pdf, .xlsx (all tables, full lead list) and brief.md.
+Writes output/dsc/<date>/: Daily Sales Check <date>.pdf, .xlsx (all tables), High-intent leads not dialled
+<date>.xlsx (the call list: phone numbers by team and caller) and brief.md.
 """
 from __future__ import annotations
 
@@ -48,6 +49,62 @@ def write_xlsx(res: A.Result, path: str) -> None:
             for col in ws.columns:
                 w = max(len(str(c.value or "")) for c in col[:200])
                 ws.column_dimensions[col[0].column_letter].width = min(max(9, w + 2), 60)
+
+
+def write_leads_xlsx(res: A.Result, path: str) -> None:
+    """Call list for check 5: one Summary sheet + one sheet per team, phone numbers as text."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+    from dsc.settings import CFG, TEAMS
+    L = res.leads.copy()
+    ref = getattr(res, "lead_ref", None)
+    head_fill, head_font = PatternFill("solid", fgColor="12253F"), Font(bold=True, color="FFFFFF")
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Summary"
+    note = (f"High-intent leads not dialled for over {CFG['leads']['untouched_hours']} h"
+            + (f" before {ref:%d %b %Y %H:%M} IST" if ref is not None else "")
+            + f". Latest LSQ stage in the last {CFG['leads']['lookback_days']} days is {' / '.join(CFG['leads']['stages'])}, "
+              "still open in LSQ, not enrolled (BASE DATA). Held by the lead owner. Oldest first on each team sheet.")
+    ws.append([note])
+    ws.append([])
+    ws.append(["Team", "Caller", "Leads not dialled", "Roadmap Done", "Follow Up For Closure", "No dial at all",
+               "Longest wait (h)"])
+    hdr_row = ws.max_row
+    for tm in TEAMS:
+        g = L[L["team"] == tm]
+        for caller, x in g.groupby("caller"):
+            rm = int(x["stage"].str.startswith("Roadmap").sum())
+            ws.append([tm, caller, len(x), rm, len(x) - rm, int(x["last_call"].isna().sum()),
+                       None if x["hours"].isna().all() else round(float(x["hours"].max()))])
+    cols = ["Caller", "Phone", "Lead name", "Stage", "Stage set on", "Last dial (IST)", "Hours since last dial",
+            "Current LSQ stage", "Called today? (TL to fill)"]
+    sheets = [(ws, hdr_row)]
+    for tm in TEAMS:
+        t = wb.create_sheet(tm.replace("Corporate law - ", "CL - ")[:31])
+        t.append(cols)
+        g = L[L["team"] == tm].sort_values(["caller", "hours"], ascending=[True, False], na_position="first")
+        for r in g.itertuples():
+            t.append([r.caller, str(r.phone), r.name or "", r.stage, pd.Timestamp(r.stage_date).strftime("%d %b %Y"),
+                      "no dial in the window" if pd.isna(r.last_call) else pd.Timestamp(r.last_call).strftime("%d %b %Y %H:%M"),
+                      None if pd.isna(r.hours) else round(float(r.hours)), r.current_stage or "", ""])
+        for c in t["B"][1:]:
+            c.number_format = "@"          # keep the number as text: no 9.19E+09, no lost digits
+        t.auto_filter.ref = f"A1:{get_column_letter(len(cols))}{max(t.max_row, 1)}"
+        t.freeze_panes = "A2"
+        sheets.append((t, 1))
+    for sh, hr in sheets:
+        for c in sh[hr]:
+            c.fill, c.font = head_fill, head_font
+            c.alignment = Alignment(wrap_text=True, vertical="center")
+        for col in sh.iter_cols(min_row=hr):
+            w = max(len(str(c.value or "")) for c in col[:300])
+            sh.column_dimensions[col[0].column_letter].width = min(max(10, w + 2), 40)
+    ws["A1"].alignment = Alignment(wrap_text=True)
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=7)
+    ws.row_dimensions[1].height = 45
+    wb.save(path)
 
 
 def brief(res: A.Result, links: dict) -> str:
@@ -104,12 +161,14 @@ def main():
     base = os.path.join(folder, f"Daily Sales Check {day.isoformat()}")
     pdf.build(res, base + ".pdf")
     write_xlsx(res, base + ".xlsx")
-    print(f"Wrote {base}.pdf and .xlsx")
+    leads_path = os.path.join(folder, f"High-intent leads not dialled {day.isoformat()}.xlsx")
+    write_leads_xlsx(res, leads_path)
+    print(f"Wrote {base}.pdf, .xlsx and {os.path.basename(leads_path)}")
 
     links = {}
     if a.publish:
         from dsc.publish import publish
-        links = publish([base + ".pdf", base + ".xlsx"])
+        links = publish([base + ".pdf", leads_path, base + ".xlsx"])
         for k, v in links.items():
             print(f"  {k}: {v}")
     text = brief(res, links)

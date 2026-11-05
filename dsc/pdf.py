@@ -340,7 +340,7 @@ def key_points(res: Result) -> str:
     if n5:
         out.append(f"<b>Lead hygiene</b>: {n5} high-intent leads (Roadmap Done / Follow Up For Closure, last "
                    f"{CFG['leads']['lookback_days']} days, not enrolled) have not been dialled for over "
-                   f"{CFG['leads']['untouched_hours']} h - each team's last page lists the numbers by caller.")
+                   f"{CFG['leads']['untouched_hours']} h - the leads Excel lists the numbers by caller.")
     return "<br/>".join(out)
 
 
@@ -469,7 +469,7 @@ def team_pages(res: Result, tm: str, story):
                    "durations; Avg/ans and Longest in minutes. Late = days flagged Late Check-In. FU = leads moved to Follow Up For "
                    "Closure (LSQ). FU level vs team median per active day: High >= "
                    f"{CFG['followup_level']['high_pct']}%, Low < {CFG['followup_level']['low_pct']}%. FU→Enr = follow-up leads "
-                   "this month that enrolled (BASE DATA, phone match). HI >24h = check 5 leads held.", "small"))
+                   "this month that enrolled (BASE DATA, phone match). HI >24h = check 5 leads held (numbers in the leads Excel).", "small"))
 
     # why
     story.append(PageBreak())
@@ -490,37 +490,30 @@ def team_pages(res: Result, tm: str, story):
         story.append(KeepTogether([Table([pair], colWidths=[CW / 2] * 2, style=[("VALIGN", (0, 0), (-1, -1), "TOP")]),
                                    Spacer(0, 4)]))
 
-    # leads
-    story.append(PageBreak())
-    story.append(Title(f"{tm} - high-intent leads not dialled for over {CFG['leads']['untouched_hours']} h"))
+    # leads: per-caller summary here; the numbers are in the leads Excel (Amit, 5 Nov 2026)
+    story.append(CondPageBreak(2.6 * inch))
+    story.append(P(f"High-intent leads not dialled for over {CFG['leads']['untouched_hours']} h (check 5)", "h2"))
     L = res.leads[res.leads["team"] == tm] if res.leads is not None else pd.DataFrame()
     ref = getattr(res, "lead_ref", None)
-    story.append(P(f"Latest stage in the last {CFG['leads']['lookback_days']} days is {' / '.join(CFG['leads']['stages'])}, the "
-                   f"lead is still open in LSQ and has not enrolled; no call to the number by anyone for over "
-                   f"{CFG['leads']['untouched_hours']} h before {ref:%d %b %H:%M} IST (latest call in the data). "
-                   f"Held by the lead owner in LSQ. Oldest first; up to {CFG['leads']['max_listed_per_caller']} per caller "
-                   "here, the full list is in the xlsx.", "small") if ref is not None else P("", "small"))
+    if ref is not None:
+        story.append(P(f"Latest stage in the last {CFG['leads']['lookback_days']} days is {' / '.join(CFG['leads']['stages'])}, "
+                       f"still open in LSQ, not enrolled; no call to the number by anyone for over "
+                       f"{CFG['leads']['untouched_hours']} h before {ref:%d %b %H:%M} IST. <b>Phone numbers, lead names and "
+                       f"last dial times are in the Excel 'High-intent leads not dialled {res.day.isoformat()}'</b>, one sheet "
+                       "per team.", "small"))
     if not len(L):
         story.append(P("<font color='#3E8E5A'><b>None</b></font> - every high-intent lead was dialled within the window.", "p"))
         return
-    summ = L.groupby("caller").agg(n=("phone", "size"), never=("last_call", lambda s: int(s.isna().sum()))).sort_values("n", ascending=False)
-    story.append(P(" | ".join(f"<b>{c}</b>: {int(x.n)}" + (f" ({int(x.never)} no dial)" if x.never else "") for c, x in summ.iterrows()), "p"))
-    story.append(Spacer(0, 3))
-    cap = CFG["leads"]["max_listed_per_caller"]
-    blocks = []
-    for caller in summ.index:
-        g = L[L["caller"] == caller].head(cap)
-        rows = [[P(f"<font color='white'><b>{caller}</b> ({int(summ.loc[caller, 'n'])})</font>", "cellb"), "Stage", "Set on",
-                 "Last dial", "Hours"]]
-        for r in g.itertuples():
-            rows.append([r.phone, "Roadmap" if r.stage.startswith("Roadmap") else "Follow-up", f"{pd.Timestamp(r.stage_date):%d %b}",
-                         "none" if pd.isna(r.last_call) else f"{r.last_call:%d %b %H:%M}",
-                         "-" if pd.isna(r.hours) else f"{r.hours:.0f}"])
-        blocks.append(table(rows, [1.05 * inch, .62 * inch, .45 * inch, .72 * inch, .38 * inch], font=6.5, repeat=False))
-    for i in range(0, len(blocks), 3):
-        trio = blocks[i:i + 3] + [""] * (3 - len(blocks[i:i + 3]))
-        story.append(KeepTogether([Table([trio], colWidths=[CW / 3] * 3, style=[("VALIGN", (0, 0), (-1, -1), "TOP")]),
-                                   Spacer(0, 4)]))
+    g = L.assign(rm=L["stage"].str.startswith("Roadmap"), nd=L["last_call"].isna())
+    summ = g.groupby("caller").agg(n=("phone", "size"), rm=("rm", "sum"), nd=("nd", "sum"),
+                                   oldest=("hours", "max"), med=("hours", "median")).sort_values("n", ascending=False)
+    rows = [["Caller", "Leads not dialled", "Roadmap Done", "Follow Up For Closure", "No dial at all (14 days)",
+             "Longest wait (h)", "Median wait (h)"]]
+    for c, x in summ.iterrows():
+        rows.append([c, int(x.n), int(x.rm), int(x.n - x.rm), int(x.nd), f1(x.oldest, 0), f1(x.med, 0)])
+    rows.append([P("<b>Team</b>"), int(summ["n"].sum()), int(summ["rm"].sum()), int(summ["n"].sum() - summ["rm"].sum()),
+                 int(summ["nd"].sum()), f1(g["hours"].max(), 0), f1(g["hours"].median(), 0)])
+    story.append(table(rows, [1.8 * inch] + [(CW - 1.8 * inch) / 6] * 6, font=7))
 
 
 def why_card(res: Result, r) -> Table:

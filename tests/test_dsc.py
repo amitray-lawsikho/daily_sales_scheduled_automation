@@ -116,6 +116,17 @@ class Checks(unittest.TestCase):
         self.assertEqual(bot["caller"].iloc[0], "Slow Dialler")
         self.assertNotIn("Team Lead", set(top["caller"]) | set(bot["caller"]))
 
+    def test_leads_excel_keeps_phone_as_text(self):
+        from openpyxl import load_workbook
+        from dsc.__main__ import write_leads_xlsx
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "leads.xlsx")
+            write_leads_xlsx(self.res, p)
+            ws = load_workbook(p)[TEAM]
+            phones = [c.value for c in ws["B"][1:]]
+            self.assertIn("9000000001", phones)
+            self.assertTrue(all(isinstance(v, str) and len(v) == 10 for v in phones))
+
     def test_pdf_builds(self):
         from dsc import pdf
         with tempfile.TemporaryDirectory() as d:

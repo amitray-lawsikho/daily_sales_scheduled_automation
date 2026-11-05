@@ -349,9 +349,12 @@ def leads_frame(res: Result, data, stages, roster):
     s = stages[(stages["d"] >= lo) & (stages["d"] <= res.day)].copy()
     rank = {"discovery": 0, "roadmap": 1, "followup": 2}
     s["r"] = s["stage"].map(rank)
+    names = (s["name"] if "name" in s else pd.Series("", index=s.index)).fillna("").astype(str)
+    name_of = s.assign(name=names)[names.str.len() > 0].sort_values("d").drop_duplicates("phone", keep="last").set_index("phone")["name"]
     s = s.sort_values(["phone", "d", "r"]).drop_duplicates("phone", keep="last")
     s = s[s["stage"].isin(hi_keys)]
-    cols = ["team", "caller", "phone", "stage", "stage_date", "last_call", "hours", "current_stage"]
+    s["name"] = s["phone"].map(name_of).fillna("")
+    cols = ["team", "caller", "phone", "name", "stage", "stage_date", "last_call", "hours", "current_stage"]
     if not len(s):
         res.leads = pd.DataFrame(columns=cols)
         return
@@ -673,7 +676,7 @@ def checks(res: Result):
             nd = int(g["last_call"].isna().sum())
             F.append(Flag(5, tm, caller, f"{len(g)} high-intent lead(s) not dialled for over {CFG['leads']['untouched_hours']} h"
                                          + (f" ({nd} with no dial in {CFG['leads']['lookback_days']} days)" if nd else "") + ".",
-                          "Dial these today before new leads; numbers on the team's lead page.", "amber"))
+                          "Dial these today before new leads; numbers in the leads Excel.", "amber"))
     # 6
     n = CFG["top_bottom"]["n"]
     ranked = cdf[~cdf["lead"] & cdf["achv_pct"].notna() & (cdf["active_status"].str.lower() == "active")]
