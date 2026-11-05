@@ -1,1 +1,68 @@
-# daily_sales_scheduled_automation
+# Part Wise Connectivity – scheduled report
+
+Builds **"<Month>: Part Wise Performance"** in the Drive folder *Team performance & Reports › Partwise Data*
+every working day at **12:00 IST**, covering the 1st of the month to yesterday. It is the same report the
+cowork project produced from manual uploads (P1 1-10, P2 11-20, P3 21-EOM, Monthly Analysis, Definitions & QC),
+with the inputs fetched automatically:
+
+| Input | Where it comes from now |
+|---|---|
+| Call log (CDR) and Stage Changed Report | Calling Analytics dashboard (Supabase, refreshed 23:00 IST nightly), the same rows as its CDR / stage downloads |
+| Older months (stage lookback for *Discovery → Enrollments* / *Roadmap → Enrollments*) | `history/LSQ_Partwise_Data_<month>.zip` in this repo (Supabase keeps 90 days) |
+| Team Members + BASE DATA | the month's *Sales Team Reports* Google Sheet (link in the month file) |
+| Team Uzair stages | *Followup / Discovery / Roadmap Created LSQ Live Sheet of Team Uzair*; past months from its renamed copy *… Team Uzair (<Month>)* |
+
+The run is plain Python on GitHub Actions: **no Claude tokens are used**, and on week-off days the job stops in a
+few seconds.
+
+## Every month (Amit)
+
+Before or on the 1st, give the new month's **Sales Team Reports link** and **working schedule**. Either tell
+Claude in a session on this repo, or add the file yourself on GitHub (`config/months/2026-12.json`):
+
+```json
+{
+  "sales_sheet": "https://docs.google.com/spreadsheets/d/<id>/edit",
+  "working_days": ["1-5", "8-12", "15-19", "22-31"]
+}
+```
+
+* No month file → nothing runs for that month.
+* Runs on each working day and covers day 1 to yesterday.
+* On the 1st of the next month it runs once more to close the month (1 to last day), and freezes that month's
+  calls and stage changes into `history/` (committed by the workflow).
+* The month's Google Sheet is created on its first run and **overwritten in place** afterwards: same link, and
+  Drive's version history keeps every earlier run.
+* Optional `"uzair_sheet": "<link>"` in a month file pins the Team Uzair workbook (otherwise it is found by name).
+
+## Run it by hand
+
+GitHub › Actions › **Part Wise Connectivity** › *Run workflow* › month `2026-10`, till `31` (for example).
+
+From a terminal (needs the secrets below in the environment):
+
+```bash
+pip install -r requirements.txt
+python -m partwise run --month 2026-11 --till 4 --publish
+python -m partwise run --month 2026-10 --till 30 --local path/to/folder   # from files: zip(s), *Sales*.xlsx, *Uzair*.xlsx
+python -m partwise.schedule --today 2026-11-10                            # what the 12:00 run would do that day
+python -m unittest discover -s tests -t .
+```
+
+## One-time setup (GitHub › Settings › Secrets and variables › Actions)
+
+| Secret | What |
+|---|---|
+| `CALL_SUPABASE_KEY` | Calling Analytics service-role key (Supabase › Project Settings › API; the same value the calling-analytics repo uses as `SUPABASE_SERVICE_KEY`) |
+| `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` | lets the run read the sheets and write the report as amitray@lawsikho.in. Create with `scripts/google_refresh_token.py` (steps inside). Make the OAuth consent screen **Internal** so the token does not expire after 7 days. |
+
+`GOOGLE_SERVICE_ACCOUNT_JSON` works instead of the three OAuth secrets if the Drive folder, the Uzair sheets and
+each month's sales sheet are shared with the service account. Google may refuse to let a service account
+*create* files in a My Drive folder, so OAuth is the safer choice.
+
+The workflow runs from the default branch, so month files must be on `main`.
+
+## Rules
+
+Unchanged from the cowork project (confirmed by Amit Sep–Oct 2026). See the *Definitions & QC* tab of any report
+and `CLAUDE.md`.
