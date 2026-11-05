@@ -152,25 +152,95 @@ def chart_weekly(res: Result, metric: str, title: str, ylabel: str, run_rate=Fal
     return fig_img(fig, w, h)
 
 
+def _weeks(res: Result, tm: str) -> pd.DataFrame:
+    return res.weekly_team[res.weekly_team["team"] == tm].reset_index(drop=True)
+
+
+def _bar_labels(ax, bars, fmt, size=6.5):
+    for b in bars:
+        v = b.get_height()
+        if v and not np.isnan(v):
+            ax.text(b.get_x() + b.get_width() / 2, v, fmt(v), ha="center", va="bottom", fontsize=size, color="#1F2937")
+
+
+def _simple_axes(ax, title):
+    ax.set_title(title, fontsize=8, color=NAVY_H, loc="left", fontweight="bold")
+    ax.spines["left"].set_visible(False)
+    ax.set_yticks([])
+    ax.tick_params(axis="x", labelsize=6.3, length=0)
+
+
+def chart_week_revenue(res: Result, tm: str, w=3.4, h=2.0):
+    g = _weeks(res, tm)
+    lab = [f"{d:%d %b}" for d in g["week"]]
+    cols = ["#C9CED6" if not c else (GREEN if r >= t else RED) for r, t, c in zip(g["revenue"], g["run_rate"], g["complete"])]
+    fig, ax = plt.subplots(figsize=(w, h))
+    bars = ax.bar(lab, g["revenue"] / 1e5, color=cols, width=.62)
+    ax.plot(lab, g["run_rate"] / 1e5, color="#1F2937", ls="--", lw=1, marker="_", ms=10)
+    _bar_labels(ax, bars, lambda v: f"{v:.1f}")
+    _simple_axes(ax, "Revenue per week (Rs lakh) vs target - - -")
+    top = np.nanmax([g["revenue"].max(), g["run_rate"].max(), 0])
+    ax.set_ylim(0, top / 1e5 * 1.25 + .1)
+    fig.tight_layout()
+    return fig_img(fig, w, h)
+
+
+def chart_week_count(res: Result, tm: str, col: str, title: str, fmt, color, w=3.4, h=1.75):
+    g = _weeks(res, tm)
+    lab = [f"{d:%d %b}" for d in g["week"]]
+    fig, ax = plt.subplots(figsize=(w, h))
+    bars = ax.bar(lab, g[col].fillna(0), color=[color if c else "#C9CED6" for c in g["complete"]], width=.62)
+    _bar_labels(ax, bars, fmt)
+    _simple_axes(ax, title)
+    top = g[col].max()
+    ax.set_ylim(0, (top if pd.notna(top) and top > 0 else 1) * 1.3)
+    fig.tight_layout()
+    return fig_img(fig, w, h)
+
+
+def _change(g: pd.DataFrame, col: str):
+    """Mean of the last 2 complete weeks vs the 2 before, or None."""
+    c = g[g["complete"]]
+    if len(c) < 4:
+        return None
+    a, b = c[col].iloc[-4:-2].mean(), c[col].iloc[-2:].mean()
+    return (a, b, (b - a) / a * 100 if a else np.nan)
+
+
+def week_takeaways(res: Result, tm: str) -> list[str]:
+    g = _weeks(res, tm)
+    c = g[g["complete"]]
+    out = []
+    if len(c):
+        hit = int((c["revenue"] >= c["run_rate"]).sum())
+        last = c.iloc[-1]
+        out.append(f"<b>Revenue</b>: on target in <b>{hit} of {len(c)}</b> full weeks. Last week {lakh(last['revenue'])} vs target "
+                   f"{lakh(last['run_rate'])} (<font color='{pace_color(last['revenue'] / last['run_rate'] * 100 if last['run_rate'] else np.nan)}'>"
+                   f"<b>{pct(last['revenue'] / last['run_rate'] * 100 if last['run_rate'] else np.nan)}</b></font>).")
+    for col, name, d in (("followups", "Follow-ups", 0), ("deep_per_day", "Counselling calls (15 min+) per caller/day", 1)):
+        ch = _change(g, col)
+        if ch:
+            a, b, p_ = ch
+            word = "up" if p_ > 5 else "down" if p_ < -5 else "flat"
+            colr = GREEN if p_ > 5 else RED if p_ < -5 else G1
+            out.append(f"<b>{name}</b>: <font color='{colr}'><b>{word} {abs(p_):.0f}%</b></font> - last 2 weeks "
+                       f"{b:,.{d}f}/week vs {a:,.{d}f}/week the 2 weeks before." if col == "followups" else
+                       f"<b>{name}</b>: <font color='{colr}'><b>{word} {abs(p_):.0f}%</b></font> - {b:.1f} vs {a:.1f} before.")
+    return out
+
+
 def chart_daily(res: Result, tm: str, w=5.0, h=2.3):
     g = res.daily[res.daily["team"] == tm]
+    rr = g["run_rate"].iloc[0] if len(g) else 0
     fig, ax = plt.subplots(figsize=(w, h))
     lab = [f"{d.day}" for d in g["d"]]
-    col = [CUR if wk else "#C9CED6" for wk in g["working"]]
-    ax.bar(lab, g["revenue"] / 1e5, color=col)
-    ax.axhline(g["run_rate"].iloc[0] / 1e5 if len(g) else 0, color=RED, ls="--", lw=1, label="daily run-rate")
-    ax2 = ax.twinx()
-    ax2.plot(lab, g["followups"], color="#0F8C82", marker="o", ms=2.5, lw=1.2, label="follow-ups set")
-    ax2.spines["right"].set_visible(True)
-    ax2.set_ylabel("follow-ups", fontsize=7, color="#0F8C82")
-    ax2.tick_params(labelsize=6.5, colors="#0F8C82")
-    ax.set_ylabel("Rs lakh", fontsize=7)
-    ax.tick_params(labelsize=6.5)
-    ax.set_title(f"Daily revenue this month (grey = week off) and follow-ups", fontsize=8.5, color=NAVY_H, loc="left",
-                 fontweight="bold")
-    h1, l1 = ax.get_legend_handles_labels()
-    h2, l2 = ax2.get_legend_handles_labels()
-    ax.legend(h1 + h2, l1 + l2, fontsize=6.3, frameon=False, loc="upper right")
+    col = ["#C9CED6" if not wk else (GREEN if v >= rr else RED) for v, wk in zip(g["revenue"], g["working"])]
+    bars = ax.bar(lab, g["revenue"] / 1e5, color=col)
+    ax.axhline(rr / 1e5, color="#1F2937", ls="--", lw=1)
+    ax.text(len(lab) - .5, rr / 1e5, f" daily target {rr / 1e5:.2f}L", va="bottom", ha="right", fontsize=6.5)
+    _bar_labels(ax, bars, lambda v: f"{v:.1f}", 6)
+    _simple_axes(ax, "Revenue each day this month (Rs lakh). Green = target met, red = missed, grey = week off")
+    ax.set_ylim(0, np.nanmax([g["revenue"].max() if len(g) else 0, rr, 0]) / 1e5 * 1.3 + .1)
     fig.tight_layout()
     return fig_img(fig, w, h)
 
@@ -179,26 +249,26 @@ def chart_pacing(res: Result, tm: str, w=5.0, h=2.3):
     p = res.pacing[res.pacing["team"] == tm]
     months = sorted(p["month"].unique())
     fig, ax = plt.subplots(figsize=(w, h))
-    pri = [m for m in months if m != res.month][::-1]
-    for i, m in enumerate(pri):
-        g = p[p["month"] == m]
-        ax.plot(g["dom"], g["cum"] / 1e5, lw=1.4, color=CYCLE[i % len(CYCLE)], ls=["--", ":", "-."][i % 3],
-                label=pd.Timestamp(m + "-01").strftime("%b"))
-    g = p[p["month"] == res.month]
-    ax.plot(g["dom"], g["cum"] / 1e5, lw=2.6, color=CUR, marker="o", ms=3, label=pd.Timestamp(res.month + "-01").strftime("%b") + " (now)",
-            zorder=5)
+    prev = [m for m in months if m < res.month]
+    if prev:
+        g = p[p["month"] == prev[-1]]
+        ax.plot(g["dom"], g["cum"] / 1e5, lw=1.4, color=PREVB, label=f"{pd.Timestamp(prev[-1] + '-01'):%B} (last month)")
     t = res.teams.set_index("team").loc[tm]
     if t["target"]:
-        # pro-rated target line across the month's working days
         days = sorted({d.day for d in res.wd})
         cum = np.cumsum([1 if d in days else 0 for d in range(1, 32)])
-        ax.plot(range(1, 32), t["target"] * cum / max(cum[-1], 1) / 1e5, color=RED, lw=1, ls="--", label="target pace")
+        ax.plot(range(1, 32), t["target"] * cum / max(cum[-1], 1) / 1e5, color="#1F2937", lw=1, ls="--", label="where target needs us")
+    g = p[p["month"] == res.month]
+    ax.plot(g["dom"], g["cum"] / 1e5, lw=2.6, color=CUR, marker="o", ms=3, label=f"{pd.Timestamp(res.month + '-01'):%B} (now)", zorder=5)
+    if len(g):
+        ax.annotate(f"{g['cum'].iloc[-1] / 1e5:.1f}L", (g["dom"].iloc[-1], g["cum"].iloc[-1] / 1e5), textcoords="offset points",
+                    xytext=(4, 4), fontsize=7, color=CUR, fontweight="bold")
     ax.set_xlim(1, 31)
-    ax.set_ylabel("Rs lakh (cumulative)", fontsize=7)
     ax.set_xlabel("day of month", fontsize=7)
+    ax.set_ylabel("Rs lakh, running total", fontsize=7)
     ax.tick_params(labelsize=6.5)
-    ax.set_title("Revenue pacing vs earlier months (same days)", fontsize=8.5, color=NAVY_H, loc="left", fontweight="bold")
-    ax.legend(fontsize=6.2, frameon=False, ncol=2, loc="upper left")
+    ax.set_title("Month so far vs target and last month", fontsize=8.5, color=NAVY_H, loc="left", fontweight="bold")
+    ax.legend(fontsize=6.5, frameon=False, loc="upper left")
     ax.grid(color="#EEF0F3", lw=.6)
     fig.tight_layout()
     return fig_img(fig, w, h)
@@ -318,8 +388,35 @@ def overview(res: Result, story):
         rows.append(r)
     story.append(table(rows, [2.2 * inch] + [(CW - 2.2 * inch) / 3] * 3, font=7))
     story.append(Spacer(0, 6))
-    story.append(P("Biggest gaps and what to do", "h2"))
-    story.append(P(key_points(res), "p"))
+    story.append(P("In one line each: where, why, what to do today", "h2"))
+    boxes = []
+    for tm in TEAMS:
+        lines = team_points(res, tm)
+        boxes.append([P(f"<b>{tm}</b>", "p")] + [P(x, "p") for x in lines])
+    story.append(Table([boxes], colWidths=[CW / 3] * 3,
+                       style=[("VALIGN", (0, 0), (-1, -1), "TOP"), ("BOX", (0, 0), (0, 0), .6, colors.HexColor(RULE)),
+                              ("BOX", (1, 0), (1, 0), .6, colors.HexColor(RULE)), ("BOX", (2, 0), (2, 0), .6, colors.HexColor(RULE)),
+                              ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FAFBFC"))]))
+
+
+def team_points(res: Result, tm: str) -> list[str]:
+    """Three pinpoint lines per team: where it stands, the main reason (with names), what to do today."""
+    t = res.teams.set_index("team").loc[tm]
+    cal = res.callers[(res.callers["team"] == tm) & ~res.callers["lead"]]
+    lab = {k: lbl for k, lbl, *_ in FUNNEL}
+    out = [f"<b>Where:</b> <font color='{pace_color(t['achv_pct'])}'><b>{pct(t['achv_pct'])}</b></font> of target pace, "
+           f"<b>{lakh(t['gap'])}</b> behind. Needs <b>{lakh(t['required_rr'])}</b> every working day from now."]
+    gaps = cal[cal["primary_key"] != ""]
+    if len(gaps):
+        k = gaps["primary_key"].value_counts().index[0]
+        who = gaps[gaps["primary_key"] == k]["caller"].tolist()
+        out.append(f"<b>Main reason:</b> {lab[k].lower()} below the team's top 3 for {len(who)} caller(s): {', '.join(who)}.")
+    L = res.leads[res.leads["team"] == tm] if res.leads is not None else pd.DataFrame()
+    if len(L):
+        top = L.groupby("caller").size().sort_values(ascending=False).head(3)
+        out.append(f"<b>Do today:</b> dial the <b>{len(L)}</b> open high-intent leads not called in 24 h "
+                   f"({', '.join(f'{c} {n}' for c, n in top.items())}...) - numbers in the leads Excel.")
+    return out
 
 
 def key_points(res: Result) -> str:
@@ -346,15 +443,20 @@ def key_points(res: Result) -> str:
 
 def trends_page(res: Result, story):
     story.append(PageBreak())
-    story.append(Title("Trends - month, week, day"))
+    story.append(Title("Trends - what changed week by week"))
+    story.append(P("Week by week, one column per team. Bars = full weeks (Mon-Sun); the grey bar is this week so far.", "small"))
+    cols = []
+    for tm in TEAMS:
+        cell = [P(f"<b>{tm}</b>", "h2"), chart_week_revenue(res, tm),
+                chart_week_count(res, tm, "followups", "Follow-ups set per week", lambda v: f"{v:.0f}", "#0F8C82"),
+                chart_week_count(res, tm, "deep_per_day", "Counselling calls (15 min+) per caller per day",
+                                 lambda v: f"{v:.1f}", "#7E57C2"),
+                Spacer(0, 2)] + [P("&bull; " + t, "p") for t in week_takeaways(res, tm)]
+        cols.append(cell)
+    story.append(Table([cols], colWidths=[CW / 3] * 3, style=[("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    story.append(PageBreak())
+    story.append(Title("Month by month"))
     story.append(chart_monthly(res))
-    story.append(Spacer(0, 4))
-    row = [chart_weekly(res, "revenue", "Weekly revenue (dashed = weekly run-rate; * = week so far)", "Rs lakh",
-                        run_rate=True), chart_weekly(res, "followups", "Follow-ups set per week (LSQ)", "follow-ups")]
-    story.append(Table([row], colWidths=[CW / 2] * 2))
-    row = [chart_weekly(res, "calls_per_day", "Calls per caller per day", "calls"),
-           chart_weekly(res, "deep_per_day", "15-min+ counselling calls per caller per day", "calls")]
-    story.append(Table([row], colWidths=[CW / 2] * 2))
     # monthly funnel table
     story.append(CondPageBreak(3.2 * inch))
     story.append(P("Monthly funnel by team (month's own team list; current month = MTD)", "h2"))
@@ -431,7 +533,7 @@ def team_pages(res: Result, tm: str, story):
     story.append(Table([[chart_daily(res, tm), chart_pacing(res, tm)]], colWidths=[CW / 2] * 2))
     wt = res.weekly_team[res.weekly_team["team"] == tm]
     rows = [["Week", "Revenue", "Run-rate", "vs RR", "Enrol.", "Calls/day", "Answered", "3-min/day", "15-min+/day",
-             "Talk h/day", "Follow-ups", "FU/day", "FU Zip High+Mod"]]
+             "Talk h/day", "Follow-ups", "FU/day", "Zip Hi+Mod"]]
     for r in wt.itertuples():
         vr = r.revenue / r.run_rate * 100 if r.run_rate else np.nan
         rows.append([f"{r.week:%d %b}" + ("" if r.complete else " (so far)"), rs(r.revenue), rs(r.run_rate),
