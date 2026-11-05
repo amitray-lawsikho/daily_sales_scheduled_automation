@@ -208,7 +208,11 @@ def anomaly_items(anom, rest, tot_rows):
     if len(rest['diffs']):
         dr = rest['new_rev'] - rest['held_rev']; de = rest['new_enr'] - rest['held_enr']
         days = ', '.join(sorted(set(rest['diffs'].date)))
-        items.append((f"restate:{round(dr, 2)}:{de}:{days}", f"RESTATEMENT of days already in history: revenue {dr:+,.2f}, enrollments {de:+d} (days: {days}). Details in the run log."))
+        df = rest['diffs']
+        moves = '; '.join(f"{r.date[5:]} {r.caller} / {r.team}: {r.dr:+,.0f}" + (f" ({int(r.de):+d} enr)" if r.de else '')
+                          for r in df.sort_values(['date', 'caller']).itertuples())
+        items.append((f"restate:{round(dr, 2)}:{de}:{days}:{len(df)}",
+                      f"RESTATEMENT of days already in history: net revenue {dr:+,.2f}, enrollments {de:+d}. Row moves: {moves}"))
     return items
 
 
