@@ -1,0 +1,17 @@
+{
+  "_readme": "Fixed settings for the Part Wise Connectivity report. Month-specific inputs live in config/months/YYYY-MM.json.",
+
+  "supabase_url": "https://ybkldfcilvibryoxcuvq.supabase.co",
+  "_supabase_note": "Calling Analytics (the calling dashboard). Calls and stage changes are kept 90 days there; older months come from history/.",
+
+  "report_folder_id": "1Wdz7FHXLkt1WrDUrjcI8MaI9XERuyWhu",
+  "report_title": "{month_name}: Part Wise Performance",
+  "_report_note": "Drive folder 'Team performance & Reports > Partwise Data'. One Google Sheet per month, created on the first run and overwritten in place after that (same link).",
+
+  "uzair_live_sheet_id": "1J-BLEl61qHN9cpHGUw2rAcbSN4lzfR5gRo-IN4-WVkw",
+  "uzair_folder_id": "1a_U9cDTihhDH7AilZCSMGwn7WewI70R9",
+  "_uzair_note": "Live sheet 'Followup / Discovery / Roadmap Created LSQ Live Sheet of Team Uzair'. It is reset each month and the old one is renamed '... LSQ - Team Uzair (<Month>)' in the same folder; past months are read from that copy.",
+
+  "lookback_months": 3,
+  "_lookback_note": "Prior months whose Discovery/Roadmap stages feed the two Stage -> Enrollments columns (Amit, 4 Oct 2026)."
+}
