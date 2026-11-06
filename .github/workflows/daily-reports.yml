@@ -1,14 +1,14 @@
 name: Daily reports (12:00 IST)
 
-# Every day at 11:40 IST (GitHub starts scheduled runs a few minutes late):
+# Started every day at 11:40 IST by Supabase pg_cron job 'daily-reports-1140' in Calling Analytics
+# (function _dispatch_daily_reports, Vault secret github_token). GitHub's own cron skipped 6 Nov 2026,
+# so it is not used. "Run workflow" still works by hand.
 #   1. gate     - stop in seconds unless a report is due today (working day, or Part Wise's month close)
 #   2. refresh  - make sure the Revenue and Calling dashboards have refreshed after 11:30 IST (the revenue
 #                 sheet is complete about 11:30); start a refresh if needed and wait for it
 #   3. Part Wise Connectivity and the Daily Sales Check, side by side, on the fresh data
 # No Claude / LLM call in runs.
 on:
-  schedule:
-    - cron: "10 6 * * *"
   workflow_dispatch:
 
 permissions:
