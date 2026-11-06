@@ -39,6 +39,20 @@ pull request**, and never ask the user for a daily manual step. Runs push direct
    ```
    This refuses a sheet whose title does not name the expected month. If it does, STOP and ask.
 
+   **Fallback, if the export fails** (the connector refuses or closes the connection because the
+   message is too large; the workbook outgrows it as the month fills up): pull only what the
+   pipeline needs, as raw values, with the Google Sheets connector `get_spreadsheet`:
+   1. Read the header rows: `ranges = ["'BASE DATA'!A1:AF1", "'Team Members'!A1:AJ1"]`,
+      `includeGridData = true`, `fields = ["sheets.properties.title", "sheets.data.rowData.values.formattedValue"]`.
+      Note the column letters of Date, Course, Fee paid, Transaction ID, the Caller name column,
+      Enrollment and Team Name (Nov 2026: C, H, J, N, R, S, W), and the width of Team Members (Nov: A:O).
+   2. Fetch them: `ranges = ["'BASE DATA'!A1:AF1", "'BASE DATA'!C1:C<rows>", … each column …,
+      "'Team Members'!A1:O<rows>"]` (rows = the sheet's rowCount), `includeGridData = true`,
+      `fields = ["sheets.properties.title", "sheets.data.startRow", "sheets.data.startColumn", "sheets.data.rowData.values.effectiveValue"]`.
+      The result is saved to a tool-results file (≈1.7 MB at day 5).
+   3. `python3 mtd/grid_to_xlsx.py "<saved file>" .work/wb.xlsx` and continue with step 4.
+   On 6 Nov 2026 this matched the export-based history to the rupee.
+
 4. **Run**: `python3 mtd/run_mtd.py run --workbook .work/wb.xlsx` (plus the same `--till`, if
    any; `--segments` only when asked, see section B).
    | exit | status | action |

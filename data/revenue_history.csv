@@ -5437,7 +5437,7 @@ date,caller,team,vertical,txns,fee_paid,enrollments
 2026-11-02,Mayank,SA - Shivam,Team Anmol,3,146425.59,0
 2026-11-02,Mayur Sachdeva,Changemakers,Team Mayur,1,18000.0,0
 2026-11-02,Medha Dwivedi,US accounting closures - Sana,Team Uzair,1,13030.0,0
-2026-11-02,Poorvi Shrivastava,ID Closure - Darshan,Team Darshan,1,54560.0,0
+2026-11-02,Poorvi Shrivastava,ID Closures - Mudasir,Team Darshan,1,54560.0,0
 2026-11-02,Pratishta Yadav,Elite,Team Uzair,1,51000.0,1
 2026-11-02,Prawal Singh,Changemakers,Team Mayur,3,112151.5,0
 2026-11-02,Priya Singh,Elite,Team Uzair,1,5000.0,1
@@ -5470,7 +5470,7 @@ date,caller,team,vertical,txns,fee_paid,enrollments
 2026-11-03,Malka Sanober Reyaz,US accounting closures - Sana,Team Uzair,1,3000.0,1
 2026-11-03,Mayank,SA - Shivam,Team Anmol,1,39862.0,0
 2026-11-03,Mimansa Chandra,SA - Aditya,Team Anmol,1,40600.0,0
-2026-11-03,Mudasir Zahoor,ID Closure - Darshan,Team Darshan,1,30000.0,0
+2026-11-03,Mudasir Zahoor,ID Closures - Mudasir,Team Darshan,1,30000.0,0
 2026-11-03,Piyush Singh,Elite,Team Uzair,1,27750.0,0
 2026-11-03,Prawal Singh,Changemakers,Team Mayur,3,123560.37,0
 2026-11-03,Rahul Kumar,SA - Aditya,Team Anmol,2,82125.29,0
@@ -5485,7 +5485,6 @@ date,caller,team,vertical,txns,fee_paid,enrollments
 2026-11-03,Swati Jha,Elite,Team Uzair,1,53000.0,0
 2026-11-03,Yamini Hitesh Billore,Changemakers,Team Mayur,2,77393.0,0
 2026-11-04,Abhinav Lorenzo,SA - Shivam,Team Anmol,2,55737.17,0
-2026-11-04,Aisha Sami,Changemakers,Team Mayur,1,52700.0,1
 2026-11-04,Anas Tamim,Corporate law - Anas,Team Uzair,1,3000.0,1
 2026-11-04,Anjali Srivastava,Changemakers,Team Mayur,1,18000.0,0
 2026-11-04,Ankita Srivastava,Women ai,Team Anmol,2,77586.0,1
@@ -5506,9 +5505,9 @@ date,caller,team,vertical,txns,fee_paid,enrollments
 2026-11-04,Kanika Verma,Changemakers,Team Mayur,2,67433.0,0
 2026-11-04,Kumar Sambhavam Pandey,SA - Shivam,Team Anmol,2,80986.33,0
 2026-11-04,Mansi Verma,US accounting closures - Deepanshi,Team Deepanshi,1,3000.0,1
-2026-11-04,Mayank,SA - Shivam,Team Anmol,3,99070.21,1
+2026-11-04,Mayank,SA - Shivam,Team Anmol,4,151770.21,1
 2026-11-04,Medha Dwivedi,US accounting closures - Sana,Team Uzair,1,999.0,1
-2026-11-04,Mudasir Zahoor,ID Closure - Darshan,Team Darshan,1,3000.0,1
+2026-11-04,Mudasir Zahoor,ID Closures - Mudasir,Team Darshan,1,3000.0,1
 2026-11-04,Mukund Khandelwal,US accounting closures - Deepanshi,Team Deepanshi,1,999.0,1
 2026-11-04,Nikita Agarwal,Women ai,Team Anmol,1,34773.0,0
 2026-11-04,Pooja Sonaniya,Corporate law - Jyoti,Team Uzair,1,5000.0,1
@@ -5516,7 +5515,7 @@ date,caller,team,vertical,txns,fee_paid,enrollments
 2026-11-04,Priya Singh,Elite,Team Uzair,1,84660.0,0
 2026-11-04,Radhika Agrawal,CD - Community,Team Abhipsha,1,2000.0,1
 2026-11-04,Rohit Agarwal,Elite,Team Uzair,1,31300.0,0
-2026-11-04,S Isra Anjum,ID Closure - Darshan,Team Darshan,1,51324.47,1
+2026-11-04,S Isra Anjum,ID Closures - Mudasir,Team Darshan,1,51324.47,1
 2026-11-04,Salma Mallick,Elite,Team Uzair,1,24000.0,0
 2026-11-04,Shaziya Khan,Elite,Team Uzair,1,102000.0,0
 2026-11-04,Shikha Chahar,Changemakers,Team Mayur,2,97174.33,0
@@ -5527,3 +5526,32 @@ date,caller,team,vertical,txns,fee_paid,enrollments
 2026-11-04,Suhail Showkat,Elite,Team Uzair,1,56148.1,1
 2026-11-04,Swati Jha,Elite,Team Uzair,2,66937.5,2
 2026-11-04,Vedahi Rana,Changemakers,Team Mayur,1,18000.0,0
+2026-11-05,Aisha Sami,Changemakers,Team Mayur,1,41618.0,1
+2026-11-05,Aleena Khan,SA - Shivam,Team Anmol,1,16035.7,0
+2026-11-05,Ankita Srivastava,Women ai,Team Anmol,1,38362.5,0
+2026-11-05,Anukriti Jawandhia,ID - Community,Team Garima,1,999.0,1
+2026-11-05,Anurita Shukla,SA - Shivam,Team Anmol,1,41271.47,1
+2026-11-05,Ayush Sanjay Naik,Corporate law - Anas,Team Uzair,1,5000.0,1
+2026-11-05,Ayush Srivastava,Changemakers,Team Mayur,3,92445.46,1
+2026-11-05,Bhoomika Saxena,CD - Community,Team Abhipsha,1,2000.0,1
+2026-11-05,Chandana Shivanand,SA - Aditya,Team Anmol,1,52350.0,0
+2026-11-05,Chhavee Jadam,Corporate law - Anas,Team Uzair,1,61000.0,0
+2026-11-05,Deepak Kumar,Corporate law - Jyoti,Team Uzair,1,5000.0,1
+2026-11-05,Devika Singh,Changemakers,Team Mayur,3,154083.48,0
+2026-11-05,Dheeraj Rawat,SA - Aditya,Team Anmol,1,38793.82,0
+2026-11-05,Direct,Direct,Direct,243,72420.0,23
+2026-11-05,Faisal Bashir,Elite,Team Uzair,1,68000.0,1
+2026-11-05,Irene Abraham,CD - Community,Team Abhipsha,1,2000.0,1
+2026-11-05,Kanika Verma,Changemakers,Team Mayur,6,279396.19,2
+2026-11-05,Malka Sanober Reyaz,US accounting closures - Sana,Team Uzair,1,3000.0,1
+2026-11-05,Mudasir Zahoor,ID Closures - Mudasir,Team Darshan,1,15000.0,0
+2026-11-05,Mukund Khandelwal,US accounting closures - Deepanshi,Team Deepanshi,1,55221.81,1
+2026-11-05,Prawal Singh,Changemakers,Team Mayur,2,91918.99,0
+2026-11-05,Radhika Agrawal,CD - Community,Team Abhipsha,1,2000.0,1
+2026-11-05,Rahul Kumar,SA - Aditya,Team Anmol,3,67212.21,0
+2026-11-05,Shaziya Khan,Elite,Team Uzair,1,3000.0,1
+2026-11-05,Simran Kapoor,Corporate law - Anas,Team Uzair,2,6000.0,2
+2026-11-05,Utsav Chaturvedi,ID Closure - Chandan,Team Darshan,1,59675.0,1
+2026-11-05,Vedahi Rana,Changemakers,Team Mayur,2,67592.25,0
+2026-11-05,Vrinda Singh,CD - Community,Team Abhipsha,1,2000.0,1
+2026-11-05,Yamini Hitesh Billore,Changemakers,Team Mayur,1,13050.0,0
