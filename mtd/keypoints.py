@@ -113,11 +113,20 @@ def bullets(seg, S):
                 f" ({PM} has {31 if PM in ('Jan','Mar','May','Jul','Aug','Oct','Dec') else 30} days).")
     else:
         def wd(y, m):
+            # the user's registered working-day schedule wins (config/monthly_sheets.json); weekdays otherwise
+            import json, os
+            try:
+                cfg = json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config', 'monthly_sheets.json')))
+                days = cfg.get('working_days', {}).get(f'{y}-{m:02d}')
+            except Exception:
+                days = None
+            if days:
+                return sum(1 for dd in days if dd <= N)
             hol = {(10, 2)}
             return sum(1 for dd in range(1, N + 1) if calendar.weekday(y, m, dd) < 5 and (m, dd) not in hol)
         cy, cmn = int(curm[:4]), int(curm[5:]); py, pmn = int(prevm[:4]), int(prevm[5:])
         care = (f"Day-{N} comparisons are pacing signals, not verdicts (Jul had the weakest opening window yet the best full month). "
-                f"1-{N} {CM} had only **{wd(cy, cmn)} working day(s)**" + (" (2 Oct holiday, 3-4 Oct weekend)" if cmn == 10 else '')
+                f"1-{N} {CM} had **{wd(cy, cmn)} working day(s)**" + (" (2 Oct holiday, 3-4 Oct weekend)" if cmn == 10 else '')
                 + f" vs {wd(py, pmn)} in 1-{N} {PM}, so the same-window comparison is distorted by the calendar.")
     if 'Collection' in seg:
         care += ((" Collection books front-load after payment cycles, so achievement % against these targets overstates performance;" if t['tgt'] else '') + f" The honest signal is the "
