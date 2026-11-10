@@ -36,6 +36,9 @@ logs. These carried over from the Cowork project unchanged. This file records wh
   (Nov 2026: 2-6, 10-14, 16-20, 23-30). The first run of a new month closes the previous month in
   history when its last day(s) fell on a week off (history only, no PDF). Manual
   "Run MTD analysis" works on any day.
+- **10 Nov 2026: one report per month.** Each run replaces that month's earlier PDF, brief and summary
+  in `reports/YYYY-MM/`; older versions remain only in git history. The month-close run builds the
+  full-month PDF (e.g. Nov 1-30), which becomes that month's single kept report.
 - **Automation**: 12:00 PM IST on working days. With no sheet registered for the month, or a sheet not
   updated to yesterday, the run stops and notifies the user (no partial report). Delivery goes to
   the Claude session (PDF), Gmail (brief + GitHub link) and the repo `reports/YYYY-MM/`.

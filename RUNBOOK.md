@@ -23,8 +23,10 @@ pull request**, and never ask the user for a daily manual step. Runs push direct
    - `prev_month_close` present: the previous month is not complete in history (its last day(s)
      fell on a week off, e.g. 30 Nov data when 1 Dec is a holiday). **First** fetch that month's
      sheet (step 3, its `sheet_id`, `--month` = that month) and run
-     `python3 mtd/run_mtd.py run --workbook .work/prev.xlsx --month YYYY-MM --history-only`.
-     That updates history only, without a PDF. Mention the close and any restatement in the brief. Then continue with the current month.
+     `python3 mtd/run_mtd.py run --workbook .work/prev.xlsx --month YYYY-MM`.
+     That completes history and builds the **full-month PDF** (e.g. "MTD Report Nov 1-30"), which
+     replaces the month's last daily file. Deliver it with today's report (chat, email) and mention
+     the close and any restatement. Then continue with the current month.
    - `status: NO_SHEET` means no sheet link is registered for that month. **STOP: produce no
      deliverables.** Notify the user (see step 6, "blocked" message): "Please share the
      *[Month Year]- Sales Team Reports* sheet link." Do not try to guess or search for the sheet.
@@ -63,8 +65,10 @@ pull request**, and never ask the user for a daily manual step. Runs push direct
    | 5 | SANITY_FAIL | an enrollment/realisation/roll-up check failed. No commit. Report the failing check to the user and ask. |
 
 5. **Save**: commit and push the updated history, PDF(s), brief and run state.
+   **One report per month:** `run` deletes that month's earlier PDF/brief/summary (listed in `replaced`).
+   Stage the deletions too (`git add -A reports/`). When the month ends, only the whole-month file is left.
    ```bash
-   git add data/ reports/
+   git add -A data/ reports/
    git commit -m "MTD run <Mon> 1-N"
    git push -u origin claude/epic-hamilton-0k0ar3
    ```

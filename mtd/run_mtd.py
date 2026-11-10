@@ -93,7 +93,8 @@ def cmd_plan(args):
         psh = sheet_for(cfg, pY, pM)
         out['prev_month_close'] = dict(month_key=pk, history_ends=last, sheet_id=psh['id'] if psh else None,
                                        note=('Close the previous month first: fetch its sheet and run '
-                                             f'`run --month {pk} --history-only`.') if psh else
+                                             f'`run --month {pk}` (builds the full-month PDF, which replaces '
+                                             'that month\'s last daily file, and completes history).') if psh else
                                        f'History for {pk} ends {last} but no sheet is registered for {pk} — ask the user.')
     print(json.dumps(out, indent=2))
     return 0 if sh else 3
@@ -364,6 +365,17 @@ def cmd_run(args):
             achievement_pct=None if t['tgt'] <= 0 else round(float(t['ach']) * 100),
             enrollments=int(t['enr']), prev_enrollments=int(t['penr']), pending=round(float(t['pend']), 2))
     json.dump(summ, open(os.path.join(rep, f'summary {CM} 1-{N}.json'), 'w'), indent=2)
+    # One report per month (user, 10 Nov 2026): this run's files replace every earlier version for the
+    # same month — older PDFs of the produced segment(s), older briefs and summaries. Earlier versions stay
+    # in git history. After the month ends, the last file left is the whole-month report.
+    keep = {os.path.basename(p) for p in pdfs} | {os.path.basename(brief), f'summary {CM} 1-{N}.json'}
+    removed = []
+    for f in sorted(os.listdir(rep)):
+        old = (f.startswith(f'brief {CM} 1-') and f.endswith('.md')) or \
+              (f.startswith(f'summary {CM} 1-') and f.endswith('.json')) or \
+              any(f.startswith(f'MTD Report {CM} 1-') and f.endswith(f' - {s_}.pdf') for s_ in segs)
+        if old and f not in keep:
+            os.remove(os.path.join(rep, f)); removed.append(f)
 
     state.setdefault(key, {})
     state[key].update(anomaly_keys=sorted(k for k, _ in items), roster=list(map(lambda v: float(v) if not isinstance(v, int) else v, ros)),
@@ -371,7 +383,7 @@ def cmd_run(args):
     state['columns'] = anom['columns']
     json.dump(state, open(STATE, 'w'), indent=2)
     print(json.dumps(dict(status='OK', month_key=key, N=N, segments=segs, pdfs=pdfs,
-                          brief=os.path.relpath(brief, REPO), new_anomalies=len(new)), indent=2))
+                          brief=os.path.relpath(brief, REPO), new_anomalies=len(new), replaced=removed), indent=2))
     return 0
 
 
