@@ -1,0 +1,19 @@
+{
+  "_comment": "WhatsApp delivery of the MTD PDF via the official WhatsApp Cloud API (Meta). No secrets here: the access token is stored as a network secret on the Claude environment and injected by the proxy for graph.facebook.com. Fill phone_number_id / waba_id / recipients, get the template approved, then set enabled=true. See docs/WHATSAPP_SETUP.md.",
+  "enabled": false,
+  "api_version": "v21.0",
+  "phone_number_id": "",
+  "waba_id": "",
+  "template": {
+    "name": "mtd_daily_report",
+    "language": "en",
+    "_body_variables": "{{1}} period, {{2}} segment, {{3}} MTD revenue, {{4}} change vs previous month same window, {{5}} achievement of pro-rated target, {{6}} enrollments"
+  },
+  "segments": ["Team Uzair"],
+  "recipients": [
+    {"name": "Example person", "number": "91XXXXXXXXXX", "enabled": false}
+  ],
+  "groups": [
+    {"name": "Example group (API-created, needs Official Business Account)", "group_id": "", "enabled": false}
+  ]
+}

@@ -353,6 +353,17 @@ def cmd_run(args):
     L += ['', '## Files'] + [f'- `{p}`' for p in pdfs] + ['- `data/revenue_history.csv` (updated)']
     brief = os.path.join(rep, f'brief {CM} 1-{N}.md')
     open(brief, 'w').write('\n'.join(L) + '\n')
+    # machine-readable headline per segment (used by mtd/whatsapp_send.py)
+    summ = {'month_key': key, 'N': N, 'D': D, 'period': f'{CM} 1-{N}, {Y}', 'prev_period': f'{PM} 1-{N}', 'generated': gen,
+            'segments': {}}
+    for s_ in segs:
+        t = SEG[s_]['tot']
+        summ['segments'][s_] = dict(
+            pdf=[p for p in pdfs if p.endswith(f' - {s_}.pdf')][0], revenue=round(float(t['rev']), 2), prev_revenue=round(float(t['prev']), 2),
+            vs_prev_pct=None if not t['prev'] else round((t['rev'] - t['prev']) / t['prev'] * 100, 1),
+            achievement_pct=None if t['tgt'] <= 0 else round(float(t['ach']) * 100),
+            enrollments=int(t['enr']), prev_enrollments=int(t['penr']), pending=round(float(t['pend']), 2))
+    json.dump(summ, open(os.path.join(rep, f'summary {CM} 1-{N}.json'), 'w'), indent=2)
 
     state.setdefault(key, {})
     state[key].update(anomaly_keys=sorted(k for k, _ in items), roster=list(map(lambda v: float(v) if not isinstance(v, int) else v, ros)),

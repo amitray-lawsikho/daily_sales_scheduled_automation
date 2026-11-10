@@ -77,6 +77,10 @@ pull request**, and never ask the user for a daily manual step. Runs push direct
      check results, NEW anomaly questions and a link to the PDF on GitHub:
      `https://github.com/amitray-lawsikho/daily_sales_scheduled_automation/blob/claude/epic-hamilton-0k0ar3/reports/YYYY-MM/<file name, URL-encoded>`.
      Do not attach the PDF (it is too large to send through the connector reliably).
+   - **WhatsApp** (only if `enabled` in `config/whatsapp.json`, see `docs/WHATSAPP_SETUP.md`):
+     `python3 mtd/whatsapp_send.py --summary "reports/YYYY-MM/summary <Mon> 1-N.json"`, then commit
+     `reports/YYYY-MM/whatsapp_log.json`. If it prints DISABLED, skip it silently. If it fails, say so in the brief and email;
+     other channels still go out.
    - If `plan` returned a `reminder` (last working day of the month), add it at the top of the
      email and chat reply.
    - In-chat reply: **brief only**. Give the headline per produced segment, the sanity-check
