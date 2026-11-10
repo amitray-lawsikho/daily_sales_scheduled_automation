@@ -32,8 +32,8 @@
     "_note": "Check 3. Periods are parts of the month (1-10, 11-20, 21-end; Amit 5 Nov 2026). For each of the last completed parts, a caller's number is off track when it is below off_track_pct_of_benchmark % of the team benchmark (median of the team's callers that week). Flagged when off track weeks_running parts in a row (the key keeps its old name). Team revenue is off track when a part's revenue is below that part's target (target / working days x working days in the part)."
   },
 
-  "mtd": {"after_day": 15, "min_pct": 70,
-          "_note": "Check 4. MTD achievement = MTD revenue / (monthly target x working days elapsed / working days in month). Flag below min_pct after day after_day."},
+  "mtd": {"after_day": 15, "min_pct": 70, "prorate": "calendar",
+          "_note": "Check 4. MTD achievement = MTD revenue / (monthly target x N / D), N = day of month, D = days in the month: the MTD Revenue Analysis rule, so both reports show the same % (Amit, 10 Nov 2026). prorate 'working_days' would use working days instead. Flag below min_pct after day after_day. Daily run-rate and 'needed per working day' still use working days."},
 
   "leads": {
     "stages": ["Roadmap Done", "Follow Up For Closure"],

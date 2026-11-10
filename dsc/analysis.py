@@ -101,6 +101,17 @@ def _div(a, b):
     return out if out.ndim else float(out)
 
 
+def prorate_share(day: date) -> float:
+    """Share of the monthly target due by `day`. Same rule as the MTD Revenue Analysis (Amit, 10 Nov 2026):
+    calendar days, N / D (N = day of month, D = days in the month). config mtd.prorate = "working_days" switches
+    to working days elapsed / working days in the month."""
+    if CFG["mtd"].get("prorate", "calendar") == "working_days":
+        wd, _ = month_working_days(month_key(day))
+        return len([d for d in wd if d <= day]) / len(wd) if wd else 0
+    import calendar as _cal
+    return day.day / _cal.monthrange(day.year, day.month)[1]
+
+
 def week_start(d: date) -> date:
     return d - timedelta(days=d.weekday())
 
@@ -259,7 +270,7 @@ def teams_frame(res: Result, mtd_rev, tt, P):
         g = mtd_rev[mtd_rev["team_m"] == t]
         target = float(tt.get(t, 0))
         mtd = float(g["revenue"].sum())
-        pro = target * n_el / n_wd if n_wd else 0
+        pro = target * prorate_share(res.day)
         rr = target / n_wd if n_wd else 0
         on_p = float(g.loc[g["d"] == P, "revenue"].sum())
         rows.append({"team": t, "target": target, "mtd": mtd, "prorated": pro,
@@ -302,7 +313,7 @@ def callers_frame(res: Result, data, rev, agent, cday, stages, roster, P):
         calls, ans = ga["total_calls"].sum(), ga["answered"].sum()
         talk = gc["talk_sec"].sum()
         target = x["target"] if x["target_ok"] else np.nan
-        pro = target * n_el / n_wd if pd.notna(target) and n_wd else np.nan
+        pro = target * prorate_share(res.day) if pd.notna(target) else np.nan
         mtd = gr["revenue"].sum()
         enr = int(gr["enrolments"].sum())
         fu = int(st.loc[name, "followup"]) if name in st.index else 0
@@ -546,7 +557,7 @@ def trends(res: Result, data, rev, agent, cday, stages, targets):
             rd_n = int(((s["tm"] == tm) & (s["stage"] == "roadmap")).sum())
             mrows.append({"team": tm, "month": mk, "revenue": g["revenue"].sum(),
                           "same_window": g.loc[pd.to_datetime(g["txn_date"]).dt.day <= same, "revenue"].sum(),
-                          "target": float(ttm.get(tm, 0)), "prorated": float(ttm.get(tm, 0)) * el / n_wdm if n_wdm else 0,
+                          "target": float(ttm.get(tm, 0)), "prorated": float(ttm.get(tm, 0)) * prorate_share(end),
                           "enrolments": int(g["enrolments"].sum()), "partial": mk == res.month,
                           "calls_per_day": _div(ga["total_calls"].sum(), active),
                           "connect_pct": _div(ga["answered"].sum(), ga["total_calls"].sum()) * 100,

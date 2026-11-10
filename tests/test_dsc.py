@@ -90,7 +90,7 @@ class Checks(unittest.TestCase):
         t = self.res.teams.set_index("team").loc[TEAM]
         self.assertEqual(t["target"], 3_600_000)                          # TL has no target
         self.assertAlmostEqual(t["run_rate"], 3_600_000 / 23)
-        self.assertAlmostEqual(t["prorated"], 3_600_000 * 3 / 23)        # 2, 3, 4 Nov elapsed
+        self.assertAlmostEqual(t["prorated"], 3_600_000 * 4 / 30)        # MTD report rule: N / D calendar days
         self.assertEqual(t["mtd"], 450_000)                               # 3 callers x 150k on Wed 4 Nov
         self.assertEqual(t["prev_wd_rev"], 450_000)
 

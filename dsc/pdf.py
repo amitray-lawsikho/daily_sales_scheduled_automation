@@ -266,8 +266,10 @@ def chart_pacing(res: Result, tm: str, w=5.0, h=2.3):
         ax.plot(g["dom"], g["cum"] / 1e5, lw=1.4, color=PREVB, label=f"{pd.Timestamp(prev[-1] + '-01'):%B} (last month)")
     t = res.teams.set_index("team").loc[tm]
     if t["target"]:
-        days = sorted({d.day for d in res.wd})
-        cum = np.cumsum([1 if d in days else 0 for d in range(1, 32)])
+        # same pace line as the MTD report: target spread evenly over the calendar days
+        import calendar as _cal
+        nd = _cal.monthrange(res.day.year, res.day.month)[1]
+        cum = np.cumsum([1 if d <= nd else 0 for d in range(1, 32)])
         ax.plot(range(1, 32), t["target"] * cum / max(cum[-1], 1) / 1e5, color="#1F2937", lw=1, ls="--", label="where target needs us")
     g = p[p["month"] == res.month]
     ax.plot(g["dom"], g["cum"] / 1e5, lw=2.6, color=CUR, marker="o", ms=3, label=f"{pd.Timestamp(res.month + '-01'):%B} (now)", zorder=5)
@@ -341,7 +343,7 @@ def overview(res: Result, story):
                  [P(f"{rs(t['mtd'])}", "card_v")],
                  [P(f"<font color='{col}'><b>{pct(t['achv_pct'])}</b></font> of pro-rated target {rs(t['prorated'])} "
                     f"(month target {rs(t['target'])})", "card_s")],
-                 [P(f"{res.prev_wd:%a %d %b}: <b>{rs(t['prev_wd_rev'])}</b> vs run-rate {rs(t['run_rate'])}/day "
+                 [P(f"Last working day ({res.prev_wd:%a %d %b}): <b>{rs(t['prev_wd_rev'])}</b> vs run-rate {rs(t['run_rate'])}/day "
                     f"(<font color='{pace_color(t['prev_wd_pct'])}'>{pct(t['prev_wd_pct'])}</font>)", "card_s")],
                  [P(f"Needed from now: <b>{rs(t['required_rr'])}</b> per working day ({len(res.remaining)} left) | "
                     f"enrolments {t['enrolments']}", "card_s")]]
@@ -686,7 +688,8 @@ def definitions(res: Result, story):
                     "'New enrollment' above Rs 800. A caller's revenue is credited to their team in that month's MonthwiseTeamList; "
                     "Direct and leaver rows stay under the team written on the sheet."),
         ("Target", "MonthwiseTeamList (team_members_data_amit): Active rows with a Target. Team target = sum of its callers'. "
-                   "Pro-rated target = target x working days elapsed / working days in the month (config/months/<month>.json)."),
+                   "Pro-rated target = target x N / D (N = day of month, D = days in the month), the same rule as the MTD Revenue "
+                   "Analysis, so both reports show the same achievement %."),
         ("Run-rate", "Daily run-rate = monthly target / working days in the month. Needed per day = (target - MTD) / working days left."),
         ("Calling", "Calling Analytics agent_day (calls, answered, 3-min, 15-20, 20+ min, breaks, check-in issues) and calls "
                     "(talk time = sum of call durations, longest call). Days = days with at least one call."),

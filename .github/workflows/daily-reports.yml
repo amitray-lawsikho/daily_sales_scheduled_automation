@@ -1,6 +1,7 @@
 name: Daily reports (12:00 IST)
 
-# Started every day at 11:40 IST by Supabase pg_cron (job "daily-reports-1140" in the Calling Analytics project,
+# Started every day at 12:15 IST, after the 12:00 MTD Revenue Analysis (Amit, 10 Nov 2026), by Supabase pg_cron
+# (job "daily-reports-1215" in the Calling Analytics project,
 # via public._dispatch_daily_reports()), because GitHub's own schedule never fired for this repo (5-6 Nov 2026).
 # Run it by hand with "Run workflow". Steps:
 #   1. gate     - stop in seconds unless a report is due today (working day, or Part Wise's month close)
