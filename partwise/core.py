@@ -82,7 +82,8 @@ def roster_frame(tm: pd.DataFrame) -> pd.DataFrame:
     tm = tm.dropna(subset=["Caller Name"]).copy()
     tm["Caller Name"] = tm["Caller Name"].astype(str).str.strip()
     tm = tm[tm["Caller Name"] != ""]
-    tm["Status"] = tm["Status"].astype("string").str.strip()
+    # a blank Status cell (seen 11 Nov 2026) is kept as blank, ranked after Active rows, and never crashes
+    tm["Status"] = tm["Status"].astype("string").str.strip().fillna("")
     tm["_r"] = (tm["Status"] != "Active").astype(int)
     tm = tm.sort_values("_r", kind="stable").drop_duplicates("Caller Name").set_index("Caller Name")
     for c in ("Team Name", "Vertical"):

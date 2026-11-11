@@ -99,3 +99,13 @@ class SupabaseShape(unittest.TestCase):
         st = sb.stages(date(2026, 11, 1), date(2026, 11, 2), tm)
         self.assertEqual(list(st.columns), STAGE_COLS)
         self.assertEqual(st["Stage_Changed_By"].tolist(), ["Asha K"])
+
+
+class BlankStatus(unittest.TestCase):
+    def test_blank_status_does_not_crash(self):
+        from partwise.core import roster_frame
+        tm = pd.DataFrame({"Caller Name": ["A", "B"], "Team Name": ["T", "T"], "Vertical": ["Team Uzair"] * 2,
+                           "Status": ["Active", None]})
+        r = roster_frame(tm)
+        self.assertEqual(r.loc["A", "Status"], "Active")
+        self.assertEqual(r.loc["B", "Status"], "")
