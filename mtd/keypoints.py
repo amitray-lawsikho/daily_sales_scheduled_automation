@@ -127,7 +127,9 @@ def bullets(seg, S):
         cy, cmn = int(curm[:4]), int(curm[5:]); py, pmn = int(prevm[:4]), int(prevm[5:])
         care = (f"Day-{N} comparisons are pacing signals, not verdicts (Jul had the weakest opening window yet the best full month). "
                 f"1-{N} {CM} had **{wd(cy, cmn)} working day(s)**" + (" (2 Oct holiday, 3-4 Oct weekend)" if cmn == 10 else '')
-                + f" vs {wd(py, pmn)} in 1-{N} {PM}, so the same-window comparison is distorted by the calendar.")
+                + f" vs {wd(py, pmn)} in 1-{N} {PM}"
+                + (", so the calendar does not distort the same-window comparison." if wd(cy, cmn) == wd(py, pmn) else
+                   ", so the same-window comparison is distorted by the calendar."))
     if 'Collection' in seg:
         care += ((" Collection books front-load after payment cycles, so achievement % against these targets overstates performance;" if t['tgt'] else '') + f" The honest signal is the "
                  f"{pct(t['rev'], t['prev']):+.0f}% same-window gap vs {PM}. {N} {CM} alone was {rs(day.iloc[-1])} and {N-1}-{N} {CM} together {rs(day.iloc[-2:].sum())}.")

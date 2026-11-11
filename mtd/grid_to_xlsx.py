@@ -64,6 +64,8 @@ def build(sheet):
 def main():
     src, out = sys.argv[1], sys.argv[2]
     d = json.load(open(src))
+    if 'sheets' not in d and isinstance(d.get('content'), dict):   # newer connector wraps the response
+        d = d['content']
     frames = {}
     for sh in d['sheets']:
         t = sh['properties']['title']
