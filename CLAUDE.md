@@ -17,7 +17,11 @@ Amit sends the new month's **Sales Team Reports link** and **working schedule** 
    (`["2-6", "10-14", "16-20", "23-30"]`). Note the week offs in `_note`.
 2. Check the sheet has `Team Members` and `BASE DATA` tabs (Google Sheets connector, header row only).
 3. Run `python -m unittest discover -s tests -t .` and `python -m partwise.schedule --today <a working day>`.
-4. Commit and push to `main` directly (Amit, 5 Nov 2026: "push to main always, don't ask"). The file must reach
+4. Update the scheduled task "Daily Sales Check + Part Wise: result to chat (working days)"
+   (`trig_01JmSmHtMkzBc2CvnYo1h2nb`, update_trigger) to the new month's working days, e.g.
+   `CRON_TZ=Asia/Kolkata 40 12 1-5,8-12 12 *`. It posts each day's result and files in Amit's chat at 12:40 IST
+   (Amit, 12 Nov 2026: "make sure we get the output over here too").
+5. Commit and push to `main` directly (Amit, 5 Nov 2026: "push to main always, don't ask"). The file must reach
    `main` before the 1st (the schedule only runs from the default branch).
 
 If he says "teams have changed", diff the new Team Members tab against the previous month's, and list the moves and
