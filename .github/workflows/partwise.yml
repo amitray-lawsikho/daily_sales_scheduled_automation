@@ -87,6 +87,22 @@ jobs:
             echo "no history change"
           fi
 
+      - name: Save the latest xlsx to the partwise-reports branch
+        # The 12:40 IST chat check reads it from there and sends the workbook to Amit (Amit, 12 Nov 2026).
+        # Only the latest file is kept (the branch is replaced each run). Caller names and counts only, no phones.
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          f=$(ls output/*.xlsx | head -1)
+          name="Partwise Analysis ${{ steps.gate.outputs.month }} 1-${{ steps.gate.outputs.till }}.xlsx"
+          rm -rf /tmp/rep && mkdir -p /tmp/rep && cp "$f" "/tmp/rep/$name"
+          cd /tmp/rep
+          printf '%s\n' "$name" > LATEST.txt
+          git init -q -b partwise-reports
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -q -m "Part Wise ${{ steps.gate.outputs.month }} 1-${{ steps.gate.outputs.till }}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" partwise-reports
+
       - name: Keep the xlsx for 14 days
         if: steps.gate.outputs.run == 'true'
         uses: actions/upload-artifact@v4
