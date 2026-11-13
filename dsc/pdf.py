@@ -218,9 +218,12 @@ def week_takeaways(res: Result, tm: str) -> list[str]:
     c = g[g["complete"]]
     out = []
     if len(c):
+        c = c[c["run_rate"] > 0]          # a part with no target (team did not exist yet) is not counted
+        if not len(c):
+            return out
         hit = int((c["revenue"] >= c["run_rate"]).sum())
         last = c.iloc[-1]
-        out.append(f"<b>Revenue</b>: on target in <b>{hit} of {len(c)}</b> full parts. Last part ({last['label']}) {lakh(last['revenue'])} vs target "
+        out.append(f"<b>Revenue</b>: on target in <b>{hit} of {len(c)}</b> full parts with a target. Last part ({last['label']}) {lakh(last['revenue'])} vs target "
                    f"{lakh(last['run_rate'])} (<font color='{pace_color(last['revenue'] / last['run_rate'] * 100 if last['run_rate'] else np.nan)}'>"
                    f"<b>{pct(last['revenue'] / last['run_rate'] * 100 if last['run_rate'] else np.nan)}</b></font>).")
     for col, name, d in (("followups_per_wd", "Follow-ups per working day", 1), ("deep_per_day", "Counselling calls (15 min+) per caller/day", 1)):

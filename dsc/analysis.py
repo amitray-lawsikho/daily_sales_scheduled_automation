@@ -254,7 +254,8 @@ def quality(res: Result, data, rev, agent, roster):
     miss = sorted(set(m["caller"]) - seen)
     if miss:
         q.append((f"On the {res.month} team list but no calls or revenue this month: {', '.join(miss)}", False))
-    if f.get("uzair_books"):
+    from dsc.settings import LABEL
+    if f.get("uzair_books") and not LABEL:   # the Uzair sheets only matter for Amit's own (Team Uzair) teams
         q.append(("Team Uzair stage sheets read: " + "; ".join(f["uzair_books"]), True))
     if f.get("lsq_leads"):
         q.append(("High-intent leads, current stage: " + f["lsq_leads"], not f["lsq_leads"].startswith("NOT")))
@@ -588,14 +589,17 @@ def trends(res: Result, data, rev, agent, cday, stages, targets):
             if d in wdm:
                 for tm in TEAMS:
                     rr[tm] = rr.get(tm, 0) + (ttm.get(tm, 0) / n_wdm if n_wdm else 0)
-        a = agent[(agent["d"] >= ws) & (agent["d"] <= we)]
+        a = agent[(agent["d"] >= ws) & (agent["d"] <= we)].copy()
+        # each caller under the team they were in during that part's month (same rule as the revenue)
+        r_part = roster_for(targets, month_key(ws))
+        a["team_part"] = a["caller"].map(dict(zip(r_part["caller"], r_part["team"]))).fillna(a["team_now"])
         c = cday[(cday["d"] >= ws) & (cday["d"] <= we)]
         s = stages[(stages["d"] >= ws) & (stages["d"] <= we)]
         fuc = s[s["stage"] == "followup"].groupby("owner").size()
         rc = rev[(rev["d"] >= ws) & (rev["d"] <= we)]
         for tm in TEAMS:
             g = rc[rc["team_m"] == tm]
-            ga = a[a["team_now"] == tm]
+            ga = a[a["team_part"] == tm]
             callers = ga["caller"].unique()
             active = int((ga["total_calls"] > 0).sum())
             fu_n = int(fuc.reindex(callers).fillna(0).sum())
@@ -613,7 +617,7 @@ def trends(res: Result, data, rev, agent, cday, stages, targets):
             active = int((ga["total_calls"] > 0).sum())
             gc = c[c["caller"] == name]
             fu_n = int(fuc.get(name, 0))
-            crows.append({"caller": name, "team": ga["team_now"].iloc[0], "week": ws, "label": label,
+            crows.append({"caller": name, "team": ga["team_part"].iloc[0], "week": ws, "label": label,
                           "complete": complete, "active_days": active,
                           "revenue": rc.loc[rc["caller"] == name, "revenue"].sum(),
                           "calls_per_day": _div(ga["total_calls"].sum(), active),
