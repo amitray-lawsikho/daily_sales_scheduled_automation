@@ -11,6 +11,15 @@ on:
       date:
         description: "Last day of data YYYY-MM-DD (blank = the scheduled rule: yesterday, working days only)"
         default: ""
+      teams:
+        description: "One-off for other teams: team names separated by ; (blank = Amit's teams from config/dsc.json)"
+        default: ""
+      label:
+        description: "One-off: name used in the file names and title, e.g. Team Darshan"
+        default: ""
+      drive_subfolder:
+        description: "One-off: Drive subfolder for the files (blank = Daily Sales Check)"
+        default: ""
 
 concurrency:
   group: dsc
@@ -52,6 +61,9 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: python -m dsc run --date "${{ steps.gate.outputs.date }}" --publish
         env:
+          DSC_TEAMS: ${{ inputs.teams }}
+          DSC_LABEL: ${{ inputs.label }}
+          DSC_DRIVE_SUBFOLDER: ${{ inputs.drive_subfolder }}
           REV_SUPABASE_KEY: ${{ secrets.REV_SUPABASE_KEY }}
           CALL_SUPABASE_KEY: ${{ secrets.CALL_SUPABASE_KEY }}
           LSQ_HOST: ${{ secrets.LSQ_HOST }}

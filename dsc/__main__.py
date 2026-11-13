@@ -190,10 +190,12 @@ def main():
     res.run_date = now.date() if not a.offline else day + timedelta(days=1)
     folder = os.path.join(a.out, day.isoformat())
     os.makedirs(folder, exist_ok=True)
-    base = os.path.join(folder, f"Daily Sales Check {day.isoformat()}")
+    from dsc.settings import LABEL
+    tag = f"{LABEL} " if LABEL else ""
+    base = os.path.join(folder, f"Daily Sales Check {tag}{day.isoformat()}")
     pdf.build(res, base + ".pdf")
     write_xlsx(res, base + ".xlsx")
-    leads_path = os.path.join(folder, f"High-intent leads not dialled {day.isoformat()}.xlsx")
+    leads_path = os.path.join(folder, f"High-intent leads not dialled {tag}{day.isoformat()}.xlsx")
     write_leads_xlsx(res, leads_path)
     print(f"Wrote {base}.pdf, .xlsx and {os.path.basename(leads_path)}")
 

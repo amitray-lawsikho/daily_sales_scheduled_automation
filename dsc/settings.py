@@ -12,6 +12,14 @@ from partwise.config import ROOT, load_month, sheet_id
 with open(os.path.join(ROOT, "config", "dsc.json"), encoding="utf-8") as f:
     CFG = json.load(f)
 
+# One-off runs for other teams (Amit, 13 Nov 2026: Team Darshan): DSC_TEAMS="Team A;Team B" replaces the team list,
+# DSC_LABEL names the files ("Daily Sales Check <label> <date>") and DSC_DRIVE_SUBFOLDER the Drive folder, so the
+# daily files of Amit's own teams are never overwritten.
+if os.environ.get("DSC_TEAMS", "").strip():
+    CFG["teams"] = [t.strip() for t in os.environ["DSC_TEAMS"].split(";") if t.strip()]
+if os.environ.get("DSC_DRIVE_SUBFOLDER", "").strip():
+    CFG["drive_subfolder"] = os.environ["DSC_DRIVE_SUBFOLDER"].strip()
+LABEL: str = os.environ.get("DSC_LABEL", "").strip()
 TEAMS: list[str] = CFG["teams"]
 
 

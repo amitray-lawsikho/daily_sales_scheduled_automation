@@ -24,7 +24,7 @@ from reportlab.platypus import (BaseDocTemplate, CondPageBreak, Frame, Image, Ke
                                 PageTemplate, Paragraph, Spacer, Table, TableStyle)
 
 from dsc.analysis import EW_LABEL, FUNNEL, Result, flagged_callers  # noqa: E402
-from dsc.settings import CFG, TEAMS  # noqa: E402
+from dsc.settings import CFG, LABEL, TEAMS  # noqa: E402
 
 NAVY_H, G1, G2, RULE = "#12253F", "#6B7280", "#9AA1AC", "#D5D9E0"
 CUR, PREVB, GREEN, AMBER, RED = "#2E5FA3", "#AFC3DC", "#3E8E5A", "#D68910", "#C0392B"
@@ -324,8 +324,9 @@ class Title(Spacer):
 # ------------------------------------------------------------------ pages
 def overview(res: Result, story):
     run = getattr(res, "run_date", None)
-    story.append(Title(f"Daily Sales Check - {run:%a %d %b %Y} (data to {res.day:%a %d %b})" if run
-                       else f"Daily Sales Check - data to {res.day:%a %d %b %Y}"))
+    name = f"Daily Sales Check{' - ' + LABEL if LABEL else ''}"
+    story.append(Title(f"{name} - {run:%a %d %b %Y} (data to {res.day:%a %d %b})" if run
+                       else f"{name} - data to {res.day:%a %d %b %Y}"))
     q = res.quality
     if res.stale:
         story.append(table([[P("<b>DATA NOT FRESH</b> - read every number below with care: " +
@@ -621,7 +622,7 @@ def team_pages(res: Result, tm: str, story):
         story.append(P(f"Latest stage in the last {CFG['leads']['lookback_days']} days is {' / '.join(CFG['leads']['stages'])}, "
                        f"still open in LSQ, not enrolled; no call to the number by anyone for over "
                        f"{CFG['leads']['untouched_hours']} h before {ref:%d %b %H:%M} IST. <b>Phone numbers, lead names and "
-                       f"last dial times are in the Excel 'High-intent leads not dialled {res.day.isoformat()}'</b>, one sheet "
+                       f"last dial times are in the Excel 'High-intent leads not dialled {(LABEL + ' ') if LABEL else ''}{res.day.isoformat()}'</b>, one sheet "
                        "per team.", "small"))
     Dr = res.leads_dropped[res.leads_dropped["team"] == tm] if getattr(res, "leads_dropped", None) is not None else pd.DataFrame()
     if len(Dr):
