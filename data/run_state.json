@@ -2,17 +2,16 @@
   "2026-11": {
     "anomaly_keys": [
       "dup_same:1",
-      "restate:0.0:0:2026-11-15:2",
       "unplaced:Team Karman Kaur:Team Karman Kaur"
     ],
     "roster": [
       254,
-      44700000.0,
-      100
+      44800000.0,
+      101
     ],
     "last_run": {
-      "N": 17,
-      "generated": "18 Nov 2026",
+      "N": 18,
+      "generated": "19 Nov 2026",
       "segments": [
         "Team Uzair"
       ]
