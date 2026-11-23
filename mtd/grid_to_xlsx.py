@@ -7,7 +7,7 @@ effectiveValue carries the real cell values (numbers unformatted, text as text),
 reads exactly like the xlsx export: text-typed fees stay text, numbers stay numbers. Date-typed
 cells come back as Sheets serial numbers and are converted to datetimes for the `Date` column.
 
-Usage: python3 mtd/grid_to_xlsx.py <get_spreadsheet result .json/.txt> <out.xlsx>
+Usage: python3 mtd/grid_to_xlsx.py <get_spreadsheet result .json/.txt> [more parts ...] <out.xlsx>
 """
 import json, sys, datetime as dt
 import pandas as pd
@@ -62,12 +62,19 @@ def build(sheet):
 
 
 def main():
-    src, out = sys.argv[1], sys.argv[2]
-    d = json.load(open(src))
-    if 'sheets' not in d and isinstance(d.get('content'), dict):   # newer connector wraps the response
-        d = d['content']
+    # usage: grid_to_xlsx.py <response.json> [<response2.json> ...] <out.xlsx>
+    # Several responses (the fetch split into parts when one is too large) are merged per sheet.
+    srcs, out = sys.argv[1:-1], sys.argv[-1]
+    merged = {}
+    for src in srcs:
+        d = json.load(open(src))
+        if 'sheets' not in d and isinstance(d.get('content'), dict):   # newer connector wraps the response
+            d = d['content']
+        for sh in d['sheets']:
+            t = sh['properties']['title']
+            merged.setdefault(t, {'properties': sh['properties'], 'data': []})['data'].extend(sh.get('data', []))
     frames = {}
-    for sh in d['sheets']:
+    for sh in merged.values():
         t = sh['properties']['title']
         df = build(sh)
         for c in DATE_COLS.get(t, []):

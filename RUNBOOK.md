@@ -52,7 +52,9 @@ pull request**, and never ask the user for a daily manual step. Runs push direct
       "'Team Members'!A1:O<rows>"]` (rows = the sheet's rowCount), `includeGridData = true`,
       `fields = ["sheets.properties.title", "sheets.data.startRow", "sheets.data.startColumn", "sheets.data.rowData.values.effectiveValue"]`.
       The result is saved to a tool-results file (≈1.7 MB at day 5).
-   3. `python3 mtd/grid_to_xlsx.py "<saved file>" .work/wb.xlsx` and continue with step 4.
+   If one request is refused as too large (seen from 23 Nov as the month fills up), split it into two calls,
+      e.g. part 1 = header + Date/Course/Fee paid columns, part 2 = Transaction ID/Caller+Enrollment/Team Name + Team Members.
+   3. `python3 mtd/grid_to_xlsx.py "<part 1 file>" ["<part 2 file>" ...] .work/wb.xlsx` (parts are merged) and continue with step 4.
    On 6 Nov 2026 this matched the export-based history to the rupee.
 
 4. **Run**: `python3 mtd/run_mtd.py run --workbook .work/wb.xlsx` (plus the same `--till`, if
