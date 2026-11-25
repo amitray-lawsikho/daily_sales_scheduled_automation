@@ -111,6 +111,17 @@ class Checks(unittest.TestCase):
         self.assertNotIn("Team Lead", set(e["caller"]))
         self.assertTrue(c.loc["Team Lead", "lead"])
 
+    def test_talk_time_blank_before_kept_calls(self):
+        """Calls are kept 60 days (Amit, 25 Nov 2026): a part starting earlier shows no talk time, later parts do."""
+        from datetime import timedelta
+        wt = self.res.weekly_team
+        cut = self.res.day - timedelta(days=59)
+        old, new = wt[wt["week"] < cut], wt[wt["week"] >= cut]
+        self.assertTrue(len(old) and old["talk_hrs_per_day"].isna().all())
+        self.assertTrue(len(new) and new["talk_hrs_per_day"].notna().any())
+        wc = self.res.weekly_caller
+        self.assertTrue(wc[wc["week"] < cut]["talk_hrs_per_day"].isna().all())
+
     def test_bottom_three_excludes_leads(self):
         top, bot = self.res.top_bottom[TEAM]
         self.assertEqual(bot["caller"].iloc[0], "Slow Dialler")

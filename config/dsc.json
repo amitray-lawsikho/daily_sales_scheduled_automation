@@ -65,8 +65,8 @@
     "_note": "Zipteams writes a 'Zipteams Notes' activity (237) to the lead in LSQ after each call; intent in mx_Custom_1 = HIGH / MODERATE / NEUTRAL / LOW / NOT_AVAILABLE (as in the sales_automation_01 project). Notes of the last 'days' days are read. A follow-up takes the intent of the lead's latest note from match_days before to match_days after the follow-up date (matched by Prospect ID). Zipteams intent is one input, never the answer."
   },
 
-  "trend": {"months": 4, "parts": 7,
-            "_note": "Parts of the month as in Part Wise: 1-10, 11-20, 21-end (Amit, 5 Nov 2026: weeks were confusing). The last 'parts' parts are shown."},
+  "trend": {"months": 4, "parts": 7, "calls_kept_days": 60,
+            "_note": "Parts of the month as in Part Wise: 1-10, 11-20, 21-end (Amit, 5 Nov 2026: weeks were confusing). The last 'parts' parts are shown. calls_kept_days: Calling Analytics keeps individual calls 60 days (Amit, 25 Nov 2026), so a part starting before that shows no talk time."},
 
   "drive_folder_id": "1Q2ShWDipHnZgmDD2FZQOvPQ3D9fzDL47",
   "drive_subfolder": "Daily Sales Check",

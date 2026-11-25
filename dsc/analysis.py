@@ -574,6 +574,9 @@ def trends(res: Result, data, rev, agent, cday, stages, targets):
     # parts of the month (as in Part Wise: 1-10, 11-20, 21-end), the last N up to the report day.
     # Internally a part is still called a "week" row (week = its first day, week_end = last day used).
     parts = month_parts(D, t.get("parts", 7))
+    # talk time comes from the individual calls, which Calling Analytics keeps for 60 days (Amit, 25 Nov 2026): a part that
+    # starts before that shows no talk time rather than a figure that is too low
+    calls_from = D - timedelta(days=t.get("calls_kept_days", 60) - 1)
     wrows, crows = [], []
     for ws, we_full, label in parts:
         we = min(we_full, D)
@@ -611,7 +614,7 @@ def trends(res: Result, data, rev, agent, cday, stages, targets):
                           "conv3_per_day": _div(ga["calls_3m"].sum(), active),
                           "deep_per_day": _div(ga["calls_15_20"].sum() + ga["calls_20p"].sum(), active),
                           "followups": fu_n, "followups_per_day": _div(fu_n, active),
-                          "talk_hrs_per_day": _div(c[c["caller"].isin(callers)]["talk_sec"].sum() / 3600, active),
+                          "talk_hrs_per_day": np.nan if ws < calls_from else _div(c[c["caller"].isin(callers)]["talk_sec"].sum() / 3600, active),
                           **_zip_mix(res.fu_zip, ws, we, callers)})
         for name, ga in a.groupby("caller"):
             active = int((ga["total_calls"] > 0).sum())
@@ -624,7 +627,7 @@ def trends(res: Result, data, rev, agent, cday, stages, targets):
                           "connect_pct": _div(ga["answered"].sum(), ga["total_calls"].sum()) * 100,
                           "conv3_per_day": _div(ga["calls_3m"].sum(), active),
                           "deep_per_day": _div(ga["calls_15_20"].sum() + ga["calls_20p"].sum(), active),
-                          "talk_hrs_per_day": _div(gc["talk_sec"].sum() / 3600, active) if len(gc) else np.nan,
+                          "talk_hrs_per_day": _div(gc["talk_sec"].sum() / 3600, active) if len(gc) and ws >= calls_from else np.nan,
                           "followups": fu_n, "followups_per_day": _div(fu_n, active)})
     res.weekly_team = pd.DataFrame(wrows)
     res.weekly_caller = pd.DataFrame(crows)

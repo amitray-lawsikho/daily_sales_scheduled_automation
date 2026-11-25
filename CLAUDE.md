@@ -67,7 +67,7 @@ uploaded to Drive › Team Uzair Performance (Amit) › Daily Sales Check. Data 
   lead with Leads.GetById / RetrieveLeadByPhoneNumber, because the Uzair 'Follow-up Status' sheet goes stale; Amit
   5 Nov 2026) not dialled by anyone for 24 h, with callers and numbers; leads since moved (Not Interested, May buy
   later, ...) go to the "Dropped - stage changed" sheet, 6 top / bottom 3 by achievement of pro-rated target. Check 7 (bootcamp) parked.
-- Trends: monthly (4 months, month's own team list), part by part (last 7 parts: 1-10, 11-20, 21-end), daily; follow-ups per caller with a
+- Trends: monthly (4 months, month's own team list), part by part (last 7 parts: 1-10, 11-20, 21-end; talk time blank for a part starting before the 60 days of calls Calling Analytics keeps, Amit 25 Nov 2026), daily; follow-ups per caller with a
   High / Medium / Low level vs the team median; the "why" = first funnel step below 75% of the team's top 3.
 - Sources: Revenue Analytics `rev_daily`; Calling Analytics `agent_day`, `calls`, `team_map`, `stage_changes`;
   Team Uzair LSQ live sheet + monthly copies (stages, 'Follow-up Status'); MonthwiseTeamList in
