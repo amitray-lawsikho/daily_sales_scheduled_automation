@@ -1,0 +1,20 @@
+{
+  "month_key": "2026-11",
+  "N": 27,
+  "D": 30,
+  "period": "Nov 1-27, 2026",
+  "prev_period": "Oct 1-27",
+  "generated": "28 Nov 2026",
+  "segments": {
+    "Team Uzair": {
+      "pdf": "reports/2026-11/MTD Report Nov 1-27 - Team Uzair.pdf",
+      "revenue": 8798446.1,
+      "prev_revenue": 10623333.21,
+      "vs_prev_pct": -17.2,
+      "achievement_pct": 47,
+      "enrollments": 181,
+      "prev_enrollments": 220,
+      "pending": 1492653.0
+    }
+  }
+}
